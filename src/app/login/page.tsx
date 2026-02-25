@@ -36,7 +36,7 @@ export default function LoginPage() {
             </Button>
           </Form>
 
-          <Link href="/signup" className={styles.signup}>
+          <Link href="/signUp" className={styles.signup}>
             Don’t have an account? Sign up
           </Link>
         </div>
