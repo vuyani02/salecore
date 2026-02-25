@@ -9,11 +9,10 @@ export default function LoginPage() {
   const { styles } = useLoginStyles();
 
   return (
-    <div className={styles.wrapper}>
       <div className={styles.container}>
         <div className={styles.leftSection}>
           <div className={styles.welcomeTitle}>Welcome to Salecore.</div>
-          <Text>
+          <Text className={styles.welcometext}>
             Log in to manage your pipeline, track opportunities, and close more deals.
           </Text>
         </div>
@@ -42,6 +41,5 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
-    </div>
   );
 }

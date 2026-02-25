@@ -2,16 +2,11 @@
 import { createStyles } from "antd-style";
 
 export const useLoginStyles = createStyles(({ css }) => ({
-  wrapper: css`
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #515151;
-  `,
   container: css`
+    background: #515151;
     width: 900px;
     max-width: 95%;
+    height: calc(100vh - 12rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -21,6 +16,7 @@ export const useLoginStyles = createStyles(({ css }) => ({
     background: rgba(112, 112, 112, 0.6);
     backdrop-filter: blur(100px);
     border-radius: 8px;
+    margin-top: 2rem;
   `,
   leftSection: css`
     flex: 1;
@@ -56,5 +52,9 @@ export const useLoginStyles = createStyles(({ css }) => ({
     text-align: center;
     margin-top: 1.5rem;
     color: #ffffff;
+  `,
+  welcometext: css`
+    font-size: 1rem;
+    color: #fff;
   `,
 }));
