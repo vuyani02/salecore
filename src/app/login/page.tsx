@@ -23,11 +23,11 @@ export default function LoginPage() {
           </Title>
 
           <Form layout="vertical">
-            <Form.Item name="name" rules={[{ required: true }]}>
+            <Form.Item name="name" rules={[{ required: true, message: "Name is required"  }]}>
               <Input placeholder="Name" className={styles.input} />
             </Form.Item>
 
-            <Form.Item name="password" rules={[{ required: true }]}>
+            <Form.Item name="password" rules={[{ required: true, message: "Password is required"  }]}>
               <Input.Password placeholder="Password" className={styles.input} />
             </Form.Item>
 
