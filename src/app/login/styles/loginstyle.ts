@@ -37,16 +37,32 @@ export const useLoginStyles = createStyles(({ css }) => ({
     border-radius: 8px;
   `,
   formTitle: css`
-    margin-bottom: 2rem;
-    color: #ffffff;
+    margin-bottom: 2rem !important;
+    color: #ffffff !important;
+    text-align: center; 
+    font-weight: 600;
+    font-family: 'Goblin One', sans-serif;
   `,
   input: css`
     margin-bottom: 1rem;
+    background-color: #707070;
+    border: none;
+    height: 2rem;
   `,
   button: css`
     width: 100%;
     margin-top: 1rem;
-  `,
+    background-color: #707070;
+    border: none;
+    box-shadow: none !important; 
+
+    &:hover,
+    &:focus {
+        background-color: #70707081 !important; 
+        color: #ffffff; 
+        border: none !important;
+    }
+    `,
   signup: css`
     display: block;
     text-align: center;
