@@ -24,6 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Goblin+One&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>
