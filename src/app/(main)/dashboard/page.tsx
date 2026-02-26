@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { Row, Col, message } from "antd";
+import PipelineCard from "../../../components/pipelinecard/PipelineCard";
 import StatCard from "../../../components/statcard/StatCard";
 import {
   ArrowUpOutlined,
@@ -11,15 +12,13 @@ import {
 import { getAxiosInstance } from "@/util/axiosInstance";
 import type { DashboardOverview } from "../../../types/dashboard";
 
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
-    maximumFractionDigits: 0,
-  }).format(value);
+const stageToneMap: Record<number, any> = {
+  1: "prospect",
+  2: "qualified",
+  3: "proposal",
+  4: "negotiation",
+  5: "won",
 };
-
-const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardOverview | null>(null);
@@ -28,49 +27,64 @@ export default function DashboardPage() {
     const load = async () => {
       try {
         const api = getAxiosInstance();
-        const res = await api.get<DashboardOverview>("/api/dashboard/overview");
-        setData(res.data);
-        console.log(res.data);
-      } catch (e: any) {
-        message.error(
-          e?.response?.data?.title ||
-            e?.response?.data?.detail ||
-            "Failed to load dashboard"
+        const res = await api.get<DashboardOverview>(
+          "/api/dashboard/overview"
         );
+        setData(res.data);
+        console.log(res.data)
+      } catch (e: any) {
+        message.error("Failed to load dashboard");
       }
     };
 
     load();
   }, []);
 
+  const pipelineStages = useMemo(() => {
+  if (!data?.pipeline?.stages) return [];
+
+  const stageToneMap: Record<number, any> = {
+    1: "prospect",
+    2: "qualified",
+    3: "proposal",
+    4: "negotiation",
+    5: "won",
+  };
+
+  return data.pipeline.stages
+        .filter((s) => s.stage >= 1 && s.stage <= 5)
+        .map((s) => ({
+        name: s.stageName,
+        count: s.count,
+        tone: stageToneMap[s.stage],
+        weight: Math.max(1, s.count),
+        }));
+    }, [data]);
+
   const kpis = useMemo(() => {
-    const pipelineValue = data?.opportunities?.pipelineValue ?? 0;
-    const winRate = data?.opportunities?.winRate ?? 0;
-    const totalContractValue = data?.contracts?.totalContractValue ?? 0;
-    const activeContracts = data?.contracts?.totalActiveCount ?? 0;
-    const expiring = data?.contracts?.expiringThisMonthCount ?? 0;
+    if (!data) return [];
 
     return [
       {
         icon: <ArrowUpOutlined />,
-        value: formatCurrency(pipelineValue),
+        value: data.opportunities.pipelineValue.toLocaleString(),
         label: "Pipeline Value",
       },
       {
         icon: <TrophyOutlined />,
-        value: formatPercent(winRate),
+        value: `${data.opportunities.winRate.toFixed(2)}%`,
         label: "Win Rate",
       },
       {
         icon: <DollarOutlined />,
-        value: formatCurrency(totalContractValue),
+        value: data.contracts.totalContractValue.toLocaleString(),
         label: "Total Contract Value",
       },
       {
         icon: <CalendarOutlined />,
-        value: String(activeContracts),
+        value: String(data.contracts.totalActiveCount),
         label: "Active Contracts",
-        sub: `${expiring} expiring this month`,
+        sub: `${data.contracts.expiringThisMonthCount} expiring this month`,
         subTone: "danger" as const,
       },
     ];
@@ -84,6 +98,20 @@ export default function DashboardPage() {
             <StatCard label={label} {...rest} />
           </Col>
         ))}
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        <Col xs={24} lg={16}>
+          <PipelineCard stages={pipelineStages} />
+        </Col>
+
+        <Col xs={24} lg={8}>
+          <StatCard
+            icon={<CalendarOutlined />}
+            value={String(data?.activities?.upcomingCount ?? 0)}
+            label="Upcoming Activities"
+          />
+        </Col>
       </Row>
     </>
   );
