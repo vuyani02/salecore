@@ -46,7 +46,6 @@ export default function SignUpPage() {
       );
 
       const auth = res.data;
-      console.log(auth);
 
       localStorage.setItem("auth_token", auth.token);
       localStorage.setItem("user_role", auth.roles?.[0] || "");

@@ -36,3 +36,13 @@ export type SignUpFormValues = {
   tenantId?: string;
   role?: Role;
 };
+
+export type LoginFormValues = {
+  email: string;
+  password: string;
+};
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
