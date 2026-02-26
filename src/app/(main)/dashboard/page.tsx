@@ -12,7 +12,7 @@ import type { DashboardOverview } from "@/types/dashboard";
 import type {
   SalesPerformanceResponse,
   SalesPerformanceTopPerformer,
-} from "@/types/salesPerformance";
+} from "@/types/dashboard";
 import StatCard from "../../../components/statcard/StatCard";
 import PipelineCard from "../../../components/pipelinecard/PipelineCard";
 import ActivityCard from "../../../components/activitycard/ActivityCard";
