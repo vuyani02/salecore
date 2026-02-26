@@ -1,9 +1,6 @@
 "use client";
-import React from "react";
-import { Row, Col } from "antd";
-import PipelineCard, {
-  PipelineStage,
-} from "../../../components/pipelinecard/PipelineCard";
+import React, { useEffect, useMemo, useState } from "react";
+import { Row, Col, message } from "antd";
 import StatCard from "../../../components/statcard/StatCard";
 import {
   ArrowUpOutlined,
@@ -11,29 +8,74 @@ import {
   DollarOutlined,
   CalendarOutlined,
 } from "@ant-design/icons";
+import { getAxiosInstance } from "@/util/axiosInstance";
+import type { DashboardOverview } from "../../../types/dashboard";
 
-const stages = [
-  { name: "Prospect", count: 12, tone: "prospect", size: "s12" },
-  { name: "Qualified", count: 9, tone: "qualified", size: "s9" },
-  { name: "Proposal", count: 8, tone: "proposal", size: "s8" },
-  { name: "Negotiation", count: 6, tone: "negotiation", size: "s6" },
-  { name: "Won", count: 17, tone: "won", size: "s17" },
-];
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+    maximumFractionDigits: 0,
+  }).format(value);
+};
 
-const kpis = [
-  { icon: <ArrowUpOutlined />, value: "R2.5M", label: "Pipeline Value" },
-  { icon: <TrophyOutlined />, value: "35.4%", label: "Win Rate" },
-  { icon: <DollarOutlined />, value: "R8.2M", label: "Total Contract Value" },
-  {
-    icon: <CalendarOutlined />,
-    value: "31",
-    label: "Active Contracts",
-    sub: "4 expiring this month",
-    subTone: "danger" as const,
-  },
-];
+const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardOverview | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const api = getAxiosInstance();
+        const res = await api.get<DashboardOverview>("/api/dashboard/overview");
+        setData(res.data);
+        console.log(res.data);
+      } catch (e: any) {
+        message.error(
+          e?.response?.data?.title ||
+            e?.response?.data?.detail ||
+            "Failed to load dashboard"
+        );
+      }
+    };
+
+    load();
+  }, []);
+
+  const kpis = useMemo(() => {
+    const pipelineValue = data?.opportunities?.pipelineValue ?? 0;
+    const winRate = data?.opportunities?.winRate ?? 0;
+    const totalContractValue = data?.contracts?.totalContractValue ?? 0;
+    const activeContracts = data?.contracts?.totalActiveCount ?? 0;
+    const expiring = data?.contracts?.expiringThisMonthCount ?? 0;
+
+    return [
+      {
+        icon: <ArrowUpOutlined />,
+        value: formatCurrency(pipelineValue),
+        label: "Pipeline Value",
+      },
+      {
+        icon: <TrophyOutlined />,
+        value: formatPercent(winRate),
+        label: "Win Rate",
+      },
+      {
+        icon: <DollarOutlined />,
+        value: formatCurrency(totalContractValue),
+        label: "Total Contract Value",
+      },
+      {
+        icon: <CalendarOutlined />,
+        value: String(activeContracts),
+        label: "Active Contracts",
+        sub: `${expiring} expiring this month`,
+        subTone: "danger" as const,
+      },
+    ];
+  }, [data]);
+
   return (
     <>
       <Row gutter={[16, 16]}>
@@ -42,12 +84,6 @@ export default function DashboardPage() {
             <StatCard label={label} {...rest} />
           </Col>
         ))}
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={16}>
-          <PipelineCard stages={stages} />
-        </Col>
       </Row>
     </>
   );
