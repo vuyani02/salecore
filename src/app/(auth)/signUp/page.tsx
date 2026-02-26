@@ -1,13 +1,13 @@
 "use client";
 import { Form, Input, Button, Typography, Select } from "antd";
 import Link from "next/link";
-import { useLoginStyles } from "./styles/loginstyle";
+import { useSignUpStyles } from "./styles/signUpStyle";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 export default function SignUpPage() {
-  const { styles } = useLoginStyles();
+  const { styles } = useSignUpStyles();
 
   return (
     <div className={styles.container}>
@@ -52,14 +52,21 @@ export default function SignUpPage() {
             <Input placeholder="Phone Number" className={styles.input} />
           </Form.Item>
 
-          <Form.Item
-            name="role"
-            rules={[{ required: true, message: "Role is required" }]}
-          >
-            <Select placeholder="Select Role" className={styles.input}>
-              <Option value="admin">Admin</Option>
-              <Option value="sales">Sales</Option>
-              <Option value="manager">Manager</Option>
+          <Form.Item name="tenantName">
+            <Input placeholder="Organisation Name (Optional)" className={styles.input} />
+          </Form.Item>
+
+          <Form.Item name="tenantId">
+            <Input placeholder="Tenant ID (Optional)" className={styles.input} />
+          </Form.Item>
+
+          <Form.Item name="role">
+            <Select placeholder="Select Role (Optional)" className={styles.select} allowClear>
+              <Option value="SalesRep">Sales Rep</Option>
+              <Option value="SalesManager">Sales Manager</Option>
+              <Option value="BusinessDevelopmentManager">
+                Business Development Manager
+              </Option>
             </Select>
           </Form.Item>
 

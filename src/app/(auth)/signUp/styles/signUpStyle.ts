@@ -1,7 +1,7 @@
 "use client";
 import { createStyles } from "antd-style";
 
-export const useLoginStyles = createStyles(({ css }) => ({
+export const useSignUpStyles = createStyles(({ css }) => ({
   container: css`
     background: rgba(112, 112, 112, 0.6);
     width: 900px;
@@ -58,7 +58,7 @@ export const useLoginStyles = createStyles(({ css }) => ({
   formTitle: css`
     margin-bottom: 1rem !important;
     color: #ffffff !important;
-    text-align: center; 
+    text-align: center;
     font-weight: 600;
     font-family: 'Goblin One', sans-serif;
 
@@ -71,10 +71,43 @@ export const useLoginStyles = createStyles(({ css }) => ({
     margin-top: 1rem;
     background-color: #707070;
     border: none;
-    height: 2rem;
+    height: 2.2rem;
+    color: #ffffff;
+
+    &::placeholder {
+      color: #d9d9d9;
+    }
+
+    &:hover,
+    &:focus,
+    &.ant-input-focused {
+      border-color: #707070;
+      box-shadow: none;
+      background-color: #707070;
+    }
 
     @media (max-width: 768px) {
       height: 2.2rem;
+    }
+  `,
+  select: css`
+    margin-top: 1rem;
+
+    .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      color: #ffffff !important;
+      height: 2.2rem !important;
+      display: flex;
+      align-items: center;
+    }
+
+    .ant-select-selection-placeholder {
+      color: #d9d9d9 !important;
+    }
+
+    .ant-select-selection-item {
+      color: #ffffff !important;
     }
   `,
   button: css`
@@ -82,12 +115,12 @@ export const useLoginStyles = createStyles(({ css }) => ({
     margin-top: 2rem;
     background-color: #707070;
     border: none;
-    box-shadow: none !important; 
+    box-shadow: none !important;
 
     &:hover,
     &:focus {
-      background-color: #70707081 !important; 
-      color: #ffffff; 
+      background-color: #70707081 !important;
+      color: #ffffff;
       border: none !important;
     }
   `,
@@ -96,6 +129,10 @@ export const useLoginStyles = createStyles(({ css }) => ({
     text-align: center;
     margin-top: 1.5rem;
     color: #ffffff;
+
+    &:hover {
+      opacity: 0.85;
+    }
 
     @media (max-width: 768px) {
       font-size: 0.9rem;
