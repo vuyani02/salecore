@@ -1,8 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { Row, Col, message } from "antd";
-import PipelineCard from "../../../components/pipelinecard/PipelineCard";
-import StatCard from "../../../components/statcard/StatCard";
 import {
   ArrowUpOutlined,
   TrophyOutlined,
@@ -10,10 +8,22 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import { getAxiosInstance } from "@/util/axiosInstance";
-import type { DashboardOverview } from "../../../types/dashboard";
+import type { DashboardOverview } from "@/types/dashboard";
+import type {
+  SalesPerformanceResponse,
+  SalesPerformanceTopPerformer,
+} from "@/types/salesPerformance";
+import StatCard from "../../../components/statcard/StatCard";
+import PipelineCard from "../../../components/pipelinecard/PipelineCard";
 import ActivityCard from "../../../components/activitycard/ActivityCard";
+import RevenueTrendCard from "../../../components/revenuecard/RevenueTrendCard";
+import { useDashboardPageStyles } from "./styles/dashboardPageStyle";
+import OpportunitiesCard from "@/components/opportunitiescard/Opportunitiescard";
+import TopSalesRepsCard from "@/components/topsalesrepscard/topsalesrepscard";
 
-const stageToneMap: Record<number, any> = {
+type PipelineTone = "prospect" | "qualified" | "proposal" | "negotiation" | "won";
+
+const stageToneMap: Record<number, PipelineTone> = {
   1: "prospect",
   2: "qualified",
   3: "proposal",
@@ -21,19 +31,31 @@ const stageToneMap: Record<number, any> = {
   5: "won",
 };
 
+const formatMoney = (value: number) => {
+  if (!Number.isFinite(value)) return "R0";
+  if (value >= 1_000_000_000) return `R${(value / 1_000_000_000).toFixed(1)}B`;
+  if (value >= 1_000_000) return `R${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `R${Math.round(value / 1_000)}K`;
+  return `R${Math.round(value)}`;
+};
+
+const shortMonth = (monthName: string) => {
+  const m = monthName.trim().split(" ")[0] ?? monthName;
+  return m.slice(0, 3);
+};
+
 const DashboardPage = () => {
   const [data, setData] = useState<DashboardOverview | null>(null);
+  const [topReps, setTopReps] = useState<SalesPerformanceTopPerformer[]>([]);
+  const { styles } = useDashboardPageStyles();
 
   useEffect(() => {
     const load = async () => {
       try {
         const api = getAxiosInstance();
-        const res = await api.get<DashboardOverview>(
-          "/api/dashboard/overview"
-        );
+        const res = await api.get<DashboardOverview>("/api/dashboard/overview");
         setData(res.data);
-        console.log(res.data)
-      } catch (e: any) {
+      } catch {
         message.error("Failed to load dashboard");
       }
     };
@@ -41,26 +63,33 @@ const DashboardPage = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const loadTop = async () => {
+      try {
+        const api = getAxiosInstance();
+        const res = await api.get<SalesPerformanceResponse>(
+          "/api/dashboard/sales-performance?topCount=5"
+        );
+        setTopReps(res.data?.topPerformers ?? []);
+      } catch {
+        setTopReps([]);
+      }
+    };
+
+    loadTop();
+  }, []);
+
   const pipelineStages = useMemo(() => {
-  if (!data?.pipeline?.stages) return [];
+    if (!data?.pipeline?.stages?.length) return [];
 
-  const stageToneMap: Record<number, any> = {
-    1: "prospect",
-    2: "qualified",
-    3: "proposal",
-    4: "negotiation",
-    5: "won",
-  };
-
-  return data.pipeline.stages
-        .filter((s) => s.stage >= 1 && s.stage <= 5)
-        .map((s) => ({
+    return data.pipeline.stages
+      .filter((s) => s.stage >= 1 && s.stage <= 5)
+      .map((s) => ({
         name: s.stageName,
         count: s.count,
         tone: stageToneMap[s.stage],
-        weight: Math.max(1, s.count),
-        }));
-    }, [data]);
+      }));
+  }, [data]);
 
   const kpis = useMemo(() => {
     if (!data) return [];
@@ -68,7 +97,7 @@ const DashboardPage = () => {
     return [
       {
         icon: <ArrowUpOutlined />,
-        value: data.opportunities.pipelineValue.toLocaleString(),
+        value: formatMoney(data.opportunities.pipelineValue),
         label: "Pipeline Value",
       },
       {
@@ -78,7 +107,7 @@ const DashboardPage = () => {
       },
       {
         icon: <DollarOutlined />,
-        value: data.contracts.totalContractValue.toLocaleString(),
+        value: formatMoney(data.contracts.totalContractValue),
         label: "Total Contract Value",
       },
       {
@@ -91,6 +120,28 @@ const DashboardPage = () => {
     ];
   }, [data]);
 
+  const revenueChartData = useMemo(() => {
+    if (!data?.revenue?.monthlyTrend?.length) return [];
+
+    return data.revenue.monthlyTrend.map((p) => {
+      const value = (p.actual ?? 0) > 0 ? p.actual : p.projected ?? 0;
+      return {
+        month: shortMonth(p.monthName),
+        value: Number(value) || 0,
+      };
+    });
+  }, [data]);
+
+  const topSalesItems = useMemo(
+    () =>
+      topReps.map((r) => ({
+        name: r.userName,
+        deals: r.wonCount,
+        amountLabel: formatMoney(r.totalRevenue),
+      })),
+    [topReps]
+  );
+
   return (
     <>
       <Row gutter={[16, 16]}>
@@ -101,27 +152,46 @@ const DashboardPage = () => {
         ))}
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+      <Row gutter={[16, 16]} className={styles.section}>
         <Col span={24}>
-            <PipelineCard stages={pipelineStages} />
+          <PipelineCard stages={pipelineStages} />
         </Col>
-     </Row>
+      </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-        <Col xs={24} lg={16}>
-            <PipelineCard stages={pipelineStages} />
+      <Row gutter={[16, 16]} className={styles.section}>
+        <Col span={24}>
+          <RevenueTrendCard
+            thisMonth={formatMoney(data?.revenue?.thisMonth ?? 0)}
+            thisQuarter={formatMoney(data?.revenue?.thisQuarter ?? 0)}
+            thisYear={formatMoney(data?.revenue?.thisYear ?? 0)}
+            data={revenueChartData}
+            reportHref="/reports"
+          />
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} className={styles.section}>
+        <Col xs={24} lg={8}>
+          <OpportunitiesCard
+            totalOpportunities={data?.opportunities?.totalCount ?? 0}
+            dealsWon={data?.opportunities?.wonCount ?? 0}
+          />
         </Col>
 
         <Col xs={24} lg={8}>
-            <ActivityCard
+          <ActivityCard
             upcomingCount={data?.activities?.upcomingCount ?? 0}
             overdueCount={data?.activities?.overdueCount ?? 0}
             completedTodayCount={data?.activities?.completedTodayCount ?? 0}
-            />
+          />
         </Col>
-     </Row>
+
+        <Col xs={24} lg={8}>
+          <TopSalesRepsCard reps={topSalesItems} leaderboardHref="/reports" />
+        </Col>
+      </Row>
     </>
   );
-}
+};
 
-export default  DashboardPage
+export default DashboardPage;
