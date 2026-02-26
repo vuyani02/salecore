@@ -20,7 +20,7 @@ export default function NavBar() {
         <Flex align="center" gap={28} className={styles.nav}>
           <Link href="/dashboard" className={styles.link}>Dashboard</Link>
           <Link href="/clients" className={styles.link}>Clients</Link>
-          <Link href="/opportunities" className={styles.link}>Opportunities</Link>
+          <Link href="/Opportunities" className={styles.link}>Opportunities</Link>
           <Link href="/contracts" className={styles.link}>Contracts</Link>
           <Link href="/activities" className={styles.link}>Activities</Link>
         </Flex>
