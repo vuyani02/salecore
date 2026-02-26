@@ -43,3 +43,18 @@ export type DashboardOverview = {
     }[];
   };
 };
+
+export type SalesPerformanceTopPerformer = {
+  userId: string;
+  userName: string;
+  opportunitiesCount: number;
+  wonCount: number;
+  lostCount: number;
+  totalRevenue: number;
+};
+
+export type SalesPerformanceResponse = {
+  averageDealsPerUser: number;
+  averageRevenuePerUser: number;
+  topPerformers: SalesPerformanceTopPerformer[];
+};

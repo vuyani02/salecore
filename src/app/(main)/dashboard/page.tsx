@@ -9,11 +9,17 @@ import {
 } from "@ant-design/icons";
 import { getAxiosInstance } from "@/util/axiosInstance";
 import type { DashboardOverview } from "@/types/dashboard";
+import type {
+  SalesPerformanceResponse,
+  SalesPerformanceTopPerformer,
+} from "@/types/salesPerformance";
 import StatCard from "../../../components/statcard/StatCard";
 import PipelineCard from "../../../components/pipelinecard/PipelineCard";
 import ActivityCard from "../../../components/activitycard/ActivityCard";
 import RevenueTrendCard from "../../../components/revenuecard/RevenueTrendCard";
 import { useDashboardPageStyles } from "./styles/dashboardPageStyle";
+import OpportunitiesCard from "@/components/opportunitiescard/Opportunitiescard";
+import TopSalesRepsCard from "@/components/topsalesrepscard/topsalesrepscard";
 
 type PipelineTone = "prospect" | "qualified" | "proposal" | "negotiation" | "won";
 
@@ -40,6 +46,7 @@ const shortMonth = (monthName: string) => {
 
 const DashboardPage = () => {
   const [data, setData] = useState<DashboardOverview | null>(null);
+  const [topReps, setTopReps] = useState<SalesPerformanceTopPerformer[]>([]);
   const { styles } = useDashboardPageStyles();
 
   useEffect(() => {
@@ -54,6 +61,22 @@ const DashboardPage = () => {
     };
 
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadTop = async () => {
+      try {
+        const api = getAxiosInstance();
+        const res = await api.get<SalesPerformanceResponse>(
+          "/api/dashboard/sales-performance?topCount=5"
+        );
+        setTopReps(res.data?.topPerformers ?? []);
+      } catch {
+        setTopReps([]);
+      }
+    };
+
+    loadTop();
   }, []);
 
   const pipelineStages = useMemo(() => {
@@ -109,6 +132,16 @@ const DashboardPage = () => {
     });
   }, [data]);
 
+  const topSalesItems = useMemo(
+    () =>
+      topReps.map((r) => ({
+        name: r.userName,
+        deals: r.wonCount,
+        amountLabel: formatMoney(r.totalRevenue),
+      })),
+    [topReps]
+  );
+
   return (
     <>
       <Row gutter={[16, 16]}>
@@ -138,8 +171,11 @@ const DashboardPage = () => {
       </Row>
 
       <Row gutter={[16, 16]} className={styles.section}>
-        <Col xs={24} lg={16}>
-          <PipelineCard stages={pipelineStages} />
+        <Col xs={24} lg={8}>
+          <OpportunitiesCard
+            totalOpportunities={data?.opportunities?.totalCount ?? 0}
+            dealsWon={data?.opportunities?.wonCount ?? 0}
+          />
         </Col>
 
         <Col xs={24} lg={8}>
@@ -148,6 +184,10 @@ const DashboardPage = () => {
             overdueCount={data?.activities?.overdueCount ?? 0}
             completedTodayCount={data?.activities?.completedTodayCount ?? 0}
           />
+        </Col>
+
+        <Col xs={24} lg={8}>
+          <TopSalesRepsCard reps={topSalesItems} leaderboardHref="/reports" />
         </Col>
       </Row>
     </>

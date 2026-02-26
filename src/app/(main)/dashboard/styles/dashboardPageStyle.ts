@@ -8,4 +8,7 @@ export const useDashboardPageStyles = createStyles(({ css }) => ({
   section: css`
     margin-top: 24px;
   `,
+  rightStack: css`
+    width: 100%;
+  `,
 }));

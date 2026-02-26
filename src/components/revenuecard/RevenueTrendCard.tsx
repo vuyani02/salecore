@@ -77,7 +77,7 @@ const RevenueTrendCard = ({
             type="link"
             className={styles.reportLink}
             icon={<RightOutlined />}
-            iconPosition="end"
+            iconPlacement="end"
           >
             <Link href={reportHref}>VIEW REPORT</Link>
           </Button>
