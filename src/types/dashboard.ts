@@ -5,6 +5,7 @@ export type DashboardOverview = {
     winRate: number;
     pipelineValue: number;
   };
+
   pipeline: {
     stages: {
       stage: number;
@@ -15,20 +16,30 @@ export type DashboardOverview = {
     }[];
     weightedPipelineValue: number;
   };
+
   activities: {
     upcomingCount: number;
     overdueCount: number;
     completedTodayCount: number;
   };
+
   contracts: {
     totalActiveCount: number;
     expiringThisMonthCount: number;
     totalContractValue: number;
   };
+
   revenue: {
     thisMonth: number;
     thisQuarter: number;
     thisYear: number;
-    monthlyTrend: { period: string; value: number }[];
+
+    monthlyTrend: {
+      year: number;
+      month: number;
+      monthName: string;
+      actual: number;
+      projected: number;
+    }[];
   };
 };
