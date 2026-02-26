@@ -12,12 +12,12 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 
-const stages: PipelineStage[] = [
-  { name: "Prospect", count: 12, color: "#7A3DB8", flex: 12 },
-  { name: "Qualified", count: 9, color: "#2F66D0", flex: 9 },
-  { name: "Proposal", count: 8, color: "#9BC53D", flex: 8 },
-  { name: "Negotiation", count: 6, color: "#20B2AA", flex: 6 },
-  { name: "Won", count: 17, color: "#2ECC71", flex: 17 },
+const stages = [
+  { name: "Prospect", count: 12, tone: "prospect", size: "s12" },
+  { name: "Qualified", count: 9, tone: "qualified", size: "s9" },
+  { name: "Proposal", count: 8, tone: "proposal", size: "s8" },
+  { name: "Negotiation", count: 6, tone: "negotiation", size: "s6" },
+  { name: "Won", count: 17, tone: "won", size: "s17" },
 ];
 
 const kpis = [

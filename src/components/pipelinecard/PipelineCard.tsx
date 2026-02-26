@@ -8,8 +8,8 @@ const { Title, Text } = Typography;
 export type PipelineStage = {
   name: string;
   count: number;
-  color: string;
-  flex: number;
+  tone: "prospect" | "qualified" | "proposal" | "negotiation" | "won";
+  size: "s12" | "s9" | "s8" | "s6" | "s17";
 };
 
 type PipelineCardProps = {
@@ -27,22 +27,20 @@ export default function PipelineCard({ stages }: PipelineCardProps) {
         </Title>
 
         <Flex className={styles.bar} gap={6}>
-          {stages.map(({ name, flex, color }) => (
+          {stages.map(({ name, tone, size }) => (
             <Flex
               key={name}
-              className={styles.segment}
-              style={{ flex, backgroundColor: color }}
+              className={`${styles.segment} ${styles[tone]} ${styles[size]}`}
             />
           ))}
         </Flex>
 
         <Flex wrap gap={20}>
-          {stages.map(({ name, count, color }) => (
+          {stages.map(({ name, count, tone }) => (
             <Flex key={name} align="center" gap={8}>
-              <Badge color={color} />
+              <Badge className={`${styles.badge} ${styles[`badge_${tone}`]}`} />
               <Text className={styles.legendText}>
-                {name}{" "}
-                <Text className={styles.legendCount}>{count}</Text>
+                {name} <Text className={styles.legendCount}>{count}</Text>
               </Text>
             </Flex>
           ))}
