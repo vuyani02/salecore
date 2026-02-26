@@ -11,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import { getAxiosInstance } from "@/util/axiosInstance";
 import type { DashboardOverview } from "../../../types/dashboard";
+import ActivityCard from "../../../components/activitycard/ActivityCard";
 
 const stageToneMap: Record<number, any> = {
   1: "prospect",
@@ -20,7 +21,7 @@ const stageToneMap: Record<number, any> = {
   5: "won",
 };
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   const [data, setData] = useState<DashboardOverview | null>(null);
 
   useEffect(() => {
@@ -101,18 +102,26 @@ export default function DashboardPage() {
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        <Col span={24}>
+            <PipelineCard stages={pipelineStages} />
+        </Col>
+     </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         <Col xs={24} lg={16}>
-          <PipelineCard stages={pipelineStages} />
+            <PipelineCard stages={pipelineStages} />
         </Col>
 
         <Col xs={24} lg={8}>
-          <StatCard
-            icon={<CalendarOutlined />}
-            value={String(data?.activities?.upcomingCount ?? 0)}
-            label="Upcoming Activities"
-          />
+            <ActivityCard
+            upcomingCount={data?.activities?.upcomingCount ?? 0}
+            overdueCount={data?.activities?.overdueCount ?? 0}
+            completedTodayCount={data?.activities?.completedTodayCount ?? 0}
+            />
         </Col>
-      </Row>
+     </Row>
     </>
   );
 }
+
+export default  DashboardPage
