@@ -25,7 +25,6 @@ export default function LoginPage() {
       const api = getAxiosInstance();
       const res = await api.post<AuthResponse>("/api/auth/login", payload);
       const auth = res.data;
-      console.log(auth);
 
       localStorage.setItem("auth_token", auth.token);
       localStorage.setItem("user_role", auth.roles?.[0] || "");

@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Button, Card, Col, DatePicker, Flex, Form,
-  Input, InputNumber, Modal, Popconfirm,
+  Input, InputNumber, Modal,
   Row, Select, Table, Tag, Tabs, Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -24,17 +24,6 @@ const stageColor = (stage: number) => {
     4: "cyan",   5: "green", 6: "red",
   };
   return map[stage] ?? "default";
-};
-
-const canDelete = () => {
-  try {
-    const raw = localStorage.getItem("roles");
-    if (!raw) return false;
-    const roles = JSON.parse(raw) as string[];
-    return roles.includes("Admin") || roles.includes("SalesManager");
-  } catch {
-    return false;
-  }
 };
 
 const formatValue = (value?: number | null, currency?: string | null) => {
@@ -119,7 +108,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
   };
 
   return (
-    <Modal title="Add Opportunity" open={open} onCancel={onClose} footer={null} destroyOnClose>
+    <Modal title="Add Opportunity" open={open} onCancel={onClose} footer={null} destroyOnHidden>
       <Form form={form} layout="vertical" onFinish={handleFinish}>
 
         <Form.Item name="title" label="Title" rules={[{ required: true, message: "Title is required" }]}>
@@ -190,8 +179,8 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
 
         <Form.Item style={{ marginBottom: 0 }}>
           <Flex justify="flex-end" gap={8}>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={isPending}>Create</Button>
+            <Button className="styled-btn" onClick={onClose}>Cancel</Button>
+            <Button className="styled-btn" htmlType="submit" loading={isPending}>Create</Button>
           </Flex>
         </Form.Item>
 
@@ -204,7 +193,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
 const OpportunitiesPage = () => {
   const { styles } = useOpportunitiesPageStyles();
   const state = useOpportunitiesState();
-  const { getOpportunities, getMyOpportunities, createOpportunity, deleteOpportunity } =
+  const { getOpportunities, getMyOpportunities, createOpportunity } =
     useOpportunitiesActions();
 
   const [tab, setTab]               = useState<TabKey>("all");
@@ -229,12 +218,6 @@ const OpportunitiesPage = () => {
     await createOpportunity(payload);
     setShowModal(false);
     getOpportunities({ pageNumber, pageSize });
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteOpportunity(id);
-    if (tab === "all")  getOpportunities({ pageNumber, pageSize });
-    if (tab === "mine") getMyOpportunities({ pageNumber, pageSize });
   };
 
   const columns: ColumnsType<Opportunity> = [
@@ -282,26 +265,6 @@ const OpportunitiesPage = () => {
         </Text>
       ),
     },
-    ...(canDelete()
-      ? [{
-          title: "",
-          key: "actions",
-          width: 100,
-          render: (_: unknown, record: Opportunity) => (
-            <Flex justify="flex-end">
-              <Popconfirm
-                title="Delete this opportunity?"
-                okText="Delete"
-                cancelText="Cancel"
-                okButtonProps={{ danger: true }}
-                onConfirm={() => handleDelete(record.id)}
-              >
-                <Button danger size="small">Delete</Button>
-              </Popconfirm>
-            </Flex>
-          ),
-        }]
-      : []),
   ];
 
   const TableContent = () => (
@@ -333,7 +296,6 @@ const OpportunitiesPage = () => {
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Opportunities</Title>
         <Button
-          type="primary"
           icon={<PlusOutlined />}
           className={styles.primaryBtn}
           onClick={() => setShowModal(true)}
