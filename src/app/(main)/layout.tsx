@@ -11,22 +11,22 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { styles } = useMainLayoutStyles();
 
   return (
-    <Layout className={styles.layout}>
+    <Layout className={styles.layout} hasSider>
+
+      {/* Fixed sidebar */}
       <NavBar />
 
-      <Content className={styles.content}>
-        <Flex justify="center" className={styles.center}>
-          <Flex vertical className={styles.shell}>
-            <Flex vertical className={styles.panel}>
-              {children}
-            </Flex>
-          </Flex>
-        </Flex>
-      </Content>
+      {/* Main content — offset by sidebar width */}
+      <div className={styles.siderOffset}>
+        <Content className={styles.content}>
+                {children}
+        </Content>
 
-      <Footer className={styles.footer}>
-        <Text className={styles.footerText}>Salecore @ 2025</Text>
-      </Footer>
+        <Footer className={styles.footer}>
+          <Text className={styles.footerText}>Salecore © 2025</Text>
+        </Footer>
+      </div>
+
     </Layout>
   );
 }

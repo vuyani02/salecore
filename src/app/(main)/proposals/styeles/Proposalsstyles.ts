@@ -29,7 +29,7 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
 
   // ── Table card ──────────────────────────────────────────────────────────────
   card: css`
-    background: rgba(255, 255, 255, 0.03) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(112, 112, 112, 0.35) !important;
     border-radius: 12px !important;
 
