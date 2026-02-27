@@ -30,14 +30,10 @@ export const useNavBarStyles = createStyles(({ css }) => ({
   link: css`
     color: rgba(255, 255, 255, 0.65);
     text-decoration: none;
+    font-size: 1rem;
     cursor: pointer;
     &:hover {
       color: rgba(255, 255, 255, 0.9);
     }
-  `,
-  avatar: css`
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(112, 112, 112, 0.9);
-    color: rgba(255, 255, 255, 0.9);
   `,
 }));

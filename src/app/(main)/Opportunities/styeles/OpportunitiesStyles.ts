@@ -12,13 +12,17 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
   `,
 
   primaryBtn: css`
-    background: ${token.colorPrimary};
-    color: #fff;
-    border: none;
+    background-color: #707070 !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
     font-weight: 600;
 
-    &:hover {
-      opacity: 0.85;
+    &:hover,
+    &:focus {
+      background-color: #70707081 !important;
+      color: #ffffff !important;
+      border: none !important;
     }
   `,
 
@@ -45,8 +49,12 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
       color: rgba(255, 255, 255, 0.9) !important;
     }
 
+    .ant-tabs-tab:hover .ant-tabs-tab-btn {
+      color: #ffffff !important;
+    }
+
     .ant-tabs-ink-bar {
-      background: ${token.colorPrimary};
+      background: #ffffff;
     }
 
     .ant-tabs-nav::before {
@@ -91,37 +99,71 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
       color: rgba(255, 255, 255, 0.4) !important;
     }
 
+    /* ── Pagination ─────────────────────────────────────────────────────────── */
     .ant-pagination {
       padding: 16px !important;
       margin: 0 !important;
     }
 
-    .ant-pagination-item a {
-      color: rgba(255, 255, 255, 0.6) !important;
+    .ant-pagination-total-text {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    .ant-pagination-item,
+    .ant-pagination-prev .ant-pagination-item-link,
+    .ant-pagination-next .ant-pagination-item-link {
+      background-color: #707070 !important;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 6px !important;
+
+      a, button {
+        color: #ffffff !important;
+      }
+
+      &:hover,
+      &:focus {
+        background-color: #70707081 !important;
+        border: none !important;
+
+        a, button {
+          color: #ffffff !important;
+        }
+      }
     }
 
     .ant-pagination-item-active {
-      background: ${token.colorPrimary} !important;
-      border-color: ${token.colorPrimary} !important;
+      background-color: #707070 !important;
+      opacity: 0.7;
     }
 
-    .ant-pagination-item-active a {
-      color: #fff !important;
+    .ant-pagination-disabled .ant-pagination-item-link {
+      opacity: 0.3 !important;
+      cursor: not-allowed;
     }
 
-    .ant-pagination-prev button,
-    .ant-pagination-next button {
-      color: rgba(255, 255, 255, 0.6) !important;
+    .ant-pagination-jump-prev .ant-pagination-item-ellipsis,
+    .ant-pagination-jump-next .ant-pagination-item-ellipsis {
+      color: rgba(255, 255, 255, 0.35) !important;
     }
 
-    .ant-select-selector {
-      background: transparent !important;
-      color: rgba(255, 255, 255, 0.6) !important;
-      border-color: rgba(112, 112, 112, 0.35) !important;
+    /* page-size selector */
+    .ant-pagination .ant-select .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 6px !important;
+      color: #ffffff !important;
     }
 
-    .ant-pagination-total-text {
-      color: rgba(255, 255, 255, 0.45) !important;
+    .ant-pagination .ant-select:hover .ant-select-selector,
+    .ant-pagination .ant-select:focus .ant-select-selector {
+      background-color: #70707081 !important;
+      border: none !important;
+    }
+
+    .ant-pagination .ant-select-arrow {
+      color: rgba(255, 255, 255, 0.7) !important;
     }
   `,
 

@@ -40,7 +40,6 @@ export const OpportunitiesProvider = ({ children }: { children: React.ReactNode 
       .get<OpportunityPagedResult>("/api/opportunities", { params: query })
       .then((response) => {
         dispatch(getOpportunitiesSuccess(response.data));
-        console.log(response.data)
       })
       .catch(() => {
         dispatch(getOpportunitiesError());

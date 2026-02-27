@@ -17,14 +17,12 @@ export default function NavBar() {
           <span className={styles.core}>core</span>
         </Title>
 
-        <Flex align="center" gap={28} className={styles.nav}>
+        <Flex align="center" gap={60} className={styles.nav}>
           <Link href="/dashboard" className={styles.link}>Dashboard</Link>
           <Link href="/clients" className={styles.link}>Clients</Link>
           <Link href="/Opportunities" className={styles.link}>Opportunities</Link>
           <Link href="/proposals" className={styles.link}>Proposals</Link>
         </Flex>
-
-        <Avatar className={styles.avatar}>P</Avatar>
       </Flex>
     </Header>
   );
