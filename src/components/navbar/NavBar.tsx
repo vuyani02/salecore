@@ -22,7 +22,7 @@ const NAV_ITEMS = [
   { href: "/clients",       label: "Clients",          icon: <TeamOutlined />      },
   { href: "/contacts",      label: "Contacts",         icon: <ContactsOutlined />  },
   { href: "/Opportunities", label: "Opportunities",    icon: <RiseOutlined />      },
-  { href: "/pricing",       label: "Pricing Requests", icon: <DollarOutlined />    },
+  { href: "/pricingrequests",       label: "Pricing Requests", icon: <DollarOutlined />    },
   { href: "/proposals",     label: "Proposals",        icon: <FileTextOutlined />  },
   { href: "/contracts",     label: "Contracts",        icon: <FileDoneOutlined />  },
   { href: "/activities",    label: "Activities",       icon: <CalendarOutlined />  },

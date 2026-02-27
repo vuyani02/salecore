@@ -17,7 +17,7 @@ export const useMainLayoutStyles = createStyles(({ css }) => ({
   content: css`
     flex: 1;
     padding: 18px 24px;
-    min-width: 70rem;
+    max-width: 70rem;
   `,
 
   center: css`
