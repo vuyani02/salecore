@@ -112,7 +112,7 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
     .ant-pagination-item,
     .ant-pagination-prev .ant-pagination-item-link,
     .ant-pagination-next .ant-pagination-item-link {
-      background-color: #707070 !important;
+      background-color: rgba(255, 255, 255, 0.06) !important;
       border: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
