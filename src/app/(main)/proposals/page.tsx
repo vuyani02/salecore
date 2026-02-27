@@ -708,7 +708,6 @@ const ProposalsPage = () => {
 
       <Flex gap={12}>
         <Select
-          className={styles.filterSelect}
           placeholder="All Statuses"
           allowClear
           value={statusFilter}
