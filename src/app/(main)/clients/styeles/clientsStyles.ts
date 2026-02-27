@@ -1,7 +1,7 @@
 "use client";
 import { createStyles } from "antd-style";
 
-export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
+export const useClientsPageStyles = createStyles(({ css, token }) => ({
   wrapper: css`
     width: 100%;
   `,
@@ -29,32 +29,6 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
 
     .ant-card-body {
       padding: 0 !important;
-    }
-  `,
-
-  tabs: css`
-    .ant-tabs-nav {
-      padding: 0 16px;
-    }
-
-    .ant-tabs-tab {
-      color: rgba(255, 255, 255, 0.5);
-    }
-
-    .ant-tabs-tab-active .ant-tabs-tab-btn {
-      color: rgba(255, 255, 255, 0.9) !important;
-    }
-
-    .ant-tabs-ink-bar {
-      background: ${token.colorPrimary};
-    }
-
-    .ant-tabs-nav::before {
-      border-bottom-color: rgba(112, 112, 112, 0.35);
-    }
-
-    .ant-tabs-content-holder {
-      padding: 0;
     }
   `,
 
