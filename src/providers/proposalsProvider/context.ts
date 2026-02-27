@@ -57,13 +57,12 @@ export interface CreateLineItemPayload {
 }
 
 export interface CreateProposalPayload {
-  opportunityId?: string;
-  clientId: string;
+  opportunityId: string;       // ← replace clientId with this
   title: string;
   description?: string;
-  currency: string;
+  currency?: string;
   validUntil?: string;
-  lineItems?: CreateLineItemPayload[];
+  lineItems: CreateLineItemPayload[];
 }
 
 export interface UpdateProposalPayload {
