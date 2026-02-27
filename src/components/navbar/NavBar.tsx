@@ -21,8 +21,7 @@ export default function NavBar() {
           <Link href="/dashboard" className={styles.link}>Dashboard</Link>
           <Link href="/clients" className={styles.link}>Clients</Link>
           <Link href="/Opportunities" className={styles.link}>Opportunities</Link>
-          <Link href="/contracts" className={styles.link}>Contracts</Link>
-          <Link href="/activities" className={styles.link}>Activities</Link>
+          <Link href="/proposals" className={styles.link}>Proposals</Link>
         </Flex>
 
         <Avatar className={styles.avatar}>P</Avatar>
