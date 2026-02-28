@@ -170,7 +170,7 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
       open={open}
       onCancel={handleClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       width={600}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish}>
