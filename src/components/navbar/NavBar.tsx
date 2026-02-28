@@ -11,6 +11,8 @@ import {
   FileTextOutlined,
   FileDoneOutlined,
   CalendarOutlined,
+  FileOutlined,
+  FolderOutlined,
 } from "@ant-design/icons";
 import { useNavBarStyles } from "./styles/navBarStyle";
 
@@ -18,14 +20,16 @@ const { Sider } = Layout;
 const { Title } = Typography;
 
 const NAV_ITEMS = [
-  { href: "/dashboard",     label: "Dashboard",        icon: <DashboardOutlined /> },
-  { href: "/clients",       label: "Clients",          icon: <TeamOutlined />      },
-  { href: "/contacts",      label: "Contacts",         icon: <ContactsOutlined />  },
-  { href: "/Opportunities", label: "Opportunities",    icon: <RiseOutlined />      },
-  { href: "/pricingrequests",       label: "Pricing Requests", icon: <DollarOutlined />    },
-  { href: "/proposals",     label: "Proposals",        icon: <FileTextOutlined />  },
-  { href: "/contracts",     label: "Contracts",        icon: <FileDoneOutlined />  },
-  { href: "/activities",    label: "Activities",       icon: <CalendarOutlined />  },
+  { href: "/dashboard",       label: "Dashboard",        icon: <DashboardOutlined /> },
+  { href: "/clients",         label: "Clients",          icon: <TeamOutlined />      },
+  { href: "/contacts",        label: "Contacts",         icon: <ContactsOutlined />  },
+  { href: "/Opportunities",   label: "Opportunities",    icon: <RiseOutlined />      },
+  { href: "/pricingrequests", label: "Pricing Requests", icon: <DollarOutlined />    },
+  { href: "/proposals",       label: "Proposals",        icon: <FileTextOutlined />  },
+  { href: "/contracts",       label: "Contracts",        icon: <FileDoneOutlined />  },
+  { href: "/activities",      label: "Activities",       icon: <CalendarOutlined />  },
+  { href: "/notes",           label: "Notes",            icon: <FileOutlined />      },
+  { href: "/documents",       label: "Documents",        icon: <FolderOutlined />    },
 ];
 
 export default function NavBar() {
