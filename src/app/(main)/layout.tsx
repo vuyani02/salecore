@@ -11,6 +11,7 @@ import { PricingRequestsProvider } from "@/providers/pricingRequestsProvider";
 import { ProposalsProvider } from "@/providers/proposalsProvider";
 import { ContractsProvider } from "@/providers/contractsProvider";
 import { ActivitiesProvider } from "@/providers/activitiesProvider";
+import { DocumentsProvider } from "@/providers/documentsProvider";
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
@@ -26,25 +27,27 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       {/* Main content — offset by sidebar width */}
       <div className={styles.siderOffset}>
-        <Content className={styles.content}>
-          <UsersProvider>
-            <ClientsProvider>
-              <ContactsProvider>
-                <OpportunitiesProvider>
-                  <PricingRequestsProvider>
-                    <ProposalsProvider>
-                      <ContractsProvider>
-                        <ActivitiesProvider>
-                          {children}
-                        </ActivitiesProvider>
-                      </ContractsProvider>
-                    </ProposalsProvider>
-                  </PricingRequestsProvider>
-                </OpportunitiesProvider>
-              </ContactsProvider>
-            </ClientsProvider>
-          </UsersProvider>
-        </Content>
+        <DocumentsProvider>
+          <Content className={styles.content}>
+            <UsersProvider>
+              <ClientsProvider>
+                <ContactsProvider>
+                  <OpportunitiesProvider>
+                    <PricingRequestsProvider>
+                      <ProposalsProvider>
+                        <ContractsProvider>
+                          <ActivitiesProvider>
+                            {children}
+                          </ActivitiesProvider>
+                        </ContractsProvider>
+                      </ProposalsProvider>
+                    </PricingRequestsProvider>
+                  </OpportunitiesProvider>
+                </ContactsProvider>
+              </ClientsProvider>
+            </UsersProvider>
+          </Content>
+        </DocumentsProvider>
 
         <Footer className={styles.footer}>
           <Text className={styles.footerText}>Salecore © 2025</Text>
