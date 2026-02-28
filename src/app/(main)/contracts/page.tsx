@@ -317,7 +317,6 @@ const ContractsPage = () => {
     {
       title: "Title",
       dataIndex: "title",
-      ellipsis: true,
       render: (title: string, record) => (
         <Flex vertical gap={2}>
           <Text className={styles.cellPrimary}>{title}</Text>
@@ -330,8 +329,6 @@ const ContractsPage = () => {
     {
       title: "Status",
       dataIndex: "status",
-      width: 110,
-      ellipsis: true,
       render: (status: number) => {
         const s = STATUS[status];
         return s ? <Tag color={s.color} style={{ marginInlineEnd: 0 }}>{s.label}</Tag> : <Tag>—</Tag>;
@@ -340,8 +337,6 @@ const ContractsPage = () => {
     {
       title: "Value",
       dataIndex: "contractValue",
-      width: 120,
-      ellipsis: true,
       render: (v: number, record) => (
         <Text className={styles.cellPrimary}>{formatMoney(v, record.currency)}</Text>
       ),
@@ -349,8 +344,6 @@ const ContractsPage = () => {
     {
       title: "Start Date",
       dataIndex: "startDate",
-      width: 120,
-      ellipsis: true,
       render: (d?: string) => (
         <Text className={styles.cellMuted}>{d ? dayjs(d).format("DD MMM YYYY") : "—"}</Text>
       ),
@@ -358,8 +351,6 @@ const ContractsPage = () => {
     {
       title: "End Date",
       dataIndex: "endDate",
-      width: 120,
-      ellipsis: true,
       render: (d?: string) => {
         if (!d) return <Text className={styles.cellMuted}>—</Text>;
         const isNear = dayjs(d).diff(dayjs(), "day") <= 30 && dayjs(d).isAfter(dayjs());
@@ -376,8 +367,6 @@ const ContractsPage = () => {
     {
       title: "Auto Renew",
       dataIndex: "autoRenew",
-      width: 100,
-      ellipsis: true,
       render: (v?: boolean) => (
         <Text className={styles.cellMuted}>{v ? "Yes" : "No"}</Text>
       ),
@@ -385,7 +374,6 @@ const ContractsPage = () => {
     {
       title: "Actions",
       key: "actions",
-      width: 200,
       render: (_: unknown, record: Contract) => (
         <Flex gap={6} justify="flex-end" wrap="wrap">
           {/* Activate — Draft only */}
@@ -493,7 +481,7 @@ const ContractsPage = () => {
       )}
 
       {/* Table card */}
-      <Card className={styles.card} variant="outlined">
+      <Card className={styles.card} variant="outlined" style={{ width: "100%" }}>
         <Tabs
           className={styles.tabs}
           activeKey={tab}
