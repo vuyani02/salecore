@@ -5,7 +5,7 @@ import NavBar from "../../components/navbar/NavBar";
 import { useMainLayoutStyles } from "./styles/layoutStyle";
 import { UsersProvider } from "@/providers/usersProvider";
 import { ClientsProvider } from "@/providers/clientsProvider";
-//import { ContactsProvider } from "@/providers/contactsProvider";
+import { ContactsProvider } from "@/providers/contactsProvider";
 import { OpportunitiesProvider } from "@/providers/opportunitiesProvider";
 import { PricingRequestsProvider } from "@/providers/pricingRequestsProvider";
 import { ProposalsProvider } from "@/providers/proposalsProvider";
@@ -29,6 +29,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <Content className={styles.content}>
           <UsersProvider>
             <ClientsProvider>
+              <ContactsProvider>
                 <OpportunitiesProvider>
                   <PricingRequestsProvider>
                     <ProposalsProvider>
@@ -40,6 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                     </ProposalsProvider>
                   </PricingRequestsProvider>
                 </OpportunitiesProvider>
+              </ContactsProvider>
             </ClientsProvider>
           </UsersProvider>
         </Content>

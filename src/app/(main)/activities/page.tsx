@@ -77,7 +77,7 @@ const CompleteModal = ({ open, onClose, onSubmit, isPending }: ICompleteModalPro
   };
 
   return (
-    <Modal title="Complete Activity" open={open} onCancel={onClose} footer={null} destroyOnClose width={440}>
+    <Modal title="Complete Activity" open={open} onCancel={onClose} footer={null} destroyOnHidden width={440}>
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           name="outcome"
@@ -166,7 +166,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) 
   };
 
   return (
-    <Modal title="Log Activity" open={open} onCancel={onClose} footer={null} destroyOnClose width={580}>
+    <Modal title="Log Activity" open={open} onCancel={onClose} footer={null} destroyOnHidden width={580}>
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ type: 1, priority: 2 }}>
 
         <Form.Item name="subject" label="Subject" rules={[{ required: true, message: "Subject is required" }]}>

@@ -97,7 +97,7 @@ const ContactModal = ({ open, onClose, onSubmit, isPending, editingContact }: IC
       open={open}
       onCancel={handleClose}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       width={640}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ isPrimary: false }}>
