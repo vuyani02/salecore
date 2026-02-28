@@ -27,10 +27,6 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-// PricingRequestStatus: 1=Pending, 2=InProgress, 3=Completed
-// Priority:             1=Low, 2=Medium, 3=High, 4=Urgent
-
 const STATUS: Record<number, { label: string; color: string }> = {
   1: { label: "Pending",     color: "default" },
   2: { label: "In Progress", color: "blue"    },
@@ -60,10 +56,8 @@ const canManage = () => {
   }
 };
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 interface OpportunityOption { id: string; title: string; }
 interface UserOption        { id: string; fullName: string; }
-
 type TabKey = "all" | "mine" | "pending";
 
 // ── Create Modal ──────────────────────────────────────────────────────────────
@@ -84,51 +78,36 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
 
   useEffect(() => {
     if (!open) return;
-
     setLoadingOpp(true);
-    instance
-      .get("/api/opportunities", { params: { pageNumber: 1, pageSize: 100 } })
+    instance.get("/api/opportunities", { params: { pageNumber: 1, pageSize: 100 } })
       .then((r) => setOpportunities(r.data?.items ?? []))
       .catch(() => setOpportunities([]))
       .finally(() => setLoadingOpp(false));
 
     setLoadingUsers(true);
-    instance
-      .get("/api/users", { params: { isActive: true, pageSize: 100 } })
+    instance.get("/api/users", { params: { isActive: true, pageSize: 100 } })
       .then((r) => setUsers(r.data?.items ?? []))
       .catch(() => setUsers([]))
       .finally(() => setLoadingUsers(false));
   }, [open]);
 
   const handleFinish = (values: any) => {
-    const payload: CreatePricingRequestPayload = {
+    onSubmit({
       opportunityId:  values.opportunityId,
       title:          values.title,
       description:    values.description,
       assignedToId:   values.assignedToId,
       priority:       values.priority,
       requiredByDate: values.requiredByDate?.toISOString(),
-    };
-    onSubmit(payload);
+    });
     form.resetFields();
   };
 
   return (
-    <Modal
-      title="Create Pricing Request"
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      destroyOnClose
-      width={560}
-    >
+    <Modal title="Create Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnClose width={560}>
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ priority: 2 }}>
 
-        <Form.Item
-          name="title"
-          label="Title"
-          rules={[{ required: true, message: "Title is required" }]}
-        >
+        <Form.Item name="title" label="Title" rules={[{ required: true, message: "Title is required" }]}>
           <Input placeholder="e.g. Custom pricing for Client X" />
         </Form.Item>
 
@@ -137,16 +116,8 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
           label="Linked Opportunity"
           extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Which deal does this pricing request belong to?</Text>}
         >
-          <Select
-            showSearch
-            placeholder="Select an opportunity (optional)"
-            loading={loadingOpp}
-            optionFilterProp="children"
-            allowClear
-          >
-            {opportunities.map((o) => (
-              <Option key={o.id} value={o.id}>{o.title}</Option>
-            ))}
+          <Select showSearch placeholder="Select an opportunity (optional)" loading={loadingOpp} optionFilterProp="children" allowClear>
+            {opportunities.map((o) => <Option key={o.id} value={o.id}>{o.title}</Option>)}
           </Select>
         </Form.Item>
 
@@ -156,17 +127,11 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
 
         <Row gutter={12}>
           <Col span={12}>
-            <Form.Item
-              name="priority"
-              label="Priority"
-              rules={[{ required: true, message: "Priority is required" }]}
-            >
+            <Form.Item name="priority" label="Priority" rules={[{ required: true, message: "Priority is required" }]}>
               <Select placeholder="Select priority">
                 {PRIORITY_OPTIONS.map((p) => (
                   <Option key={p.value} value={p.value}>
-                    <Tag color={PRIORITY[p.value].color} style={{ marginInlineEnd: 6 }}>
-                      {p.label}
-                    </Tag>
+                    <Tag color={PRIORITY[p.value].color} style={{ marginInlineEnd: 6 }}>{p.label}</Tag>
                   </Option>
                 ))}
               </Select>
@@ -178,11 +143,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
               label="Required By"
               extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Deadline for this request</Text>}
             >
-              <DatePicker
-                style={{ width: "100%" }}
-                disabledDate={(d) => d && d.isBefore(dayjs(), "day")}
-                placeholder="Select deadline"
-              />
+              <DatePicker style={{ width: "100%" }} disabledDate={(d) => d && d.isBefore(dayjs(), "day")} placeholder="Select deadline" />
             </Form.Item>
           </Col>
         </Row>
@@ -192,30 +153,17 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
           label="Assign To"
           extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Assigning will set status to In Progress automatically</Text>}
         >
-          <Select
-            showSearch
-            placeholder="Assign to a team member (optional)"
-            loading={loadingUsers}
-            optionFilterProp="children"
-            allowClear
-          >
-            {users.map((u) => (
-              <Option key={u.id} value={u.id}>{u.fullName}</Option>
-            ))}
+          <Select showSearch placeholder="Assign to a team member (optional)" loading={loadingUsers} optionFilterProp="children" allowClear>
+            {users.map((u) => <Option key={u.id} value={u.id}>{u.fullName}</Option>)}
           </Select>
         </Form.Item>
 
         <Flex justify="flex-end" gap={8} style={{ marginTop: 8 }}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button
-            htmlType="submit"
-            loading={isPending}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-          >
+          <Button htmlType="submit" loading={isPending} style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}>
             Create Request
           </Button>
         </Flex>
-
       </Form>
     </Modal>
   );
@@ -230,16 +178,15 @@ interface AssignModalProps {
 }
 
 const AssignModal = ({ open, onClose, onSubmit, isPending }: AssignModalProps) => {
-  const [form]        = Form.useForm();
-  const [users,       setUsers]       = useState<UserOption[]>([]);
+  const [form]         = Form.useForm();
+  const [users,        setUsers]        = useState<UserOption[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const instance = getAxiosInstance();
 
   useEffect(() => {
     if (!open) return;
     setLoadingUsers(true);
-    instance
-      .get("/api/users", { params: { isActive: true, pageSize: 100 } })
+    instance.get("/api/users", { params: { isActive: true, pageSize: 100 } })
       .then((r) => setUsers(r.data?.items ?? []))
       .catch(() => setUsers([]))
       .finally(() => setLoadingUsers(false));
@@ -251,14 +198,7 @@ const AssignModal = ({ open, onClose, onSubmit, isPending }: AssignModalProps) =
   };
 
   return (
-    <Modal
-      title="Assign Pricing Request"
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      destroyOnClose
-      width={400}
-    >
+    <Modal title="Assign Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnClose width={400}>
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           name="userId"
@@ -266,25 +206,14 @@ const AssignModal = ({ open, onClose, onSubmit, isPending }: AssignModalProps) =
           rules={[{ required: true, message: "Please select a team member" }]}
           extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Status will change to In Progress once assigned</Text>}
         >
-          <Select
-            showSearch
-            placeholder="Select a team member"
-            loading={loadingUsers}
-            optionFilterProp="children"
-          >
-            {users.map((u) => (
-              <Option key={u.id} value={u.id}>{u.fullName}</Option>
-            ))}
+          <Select showSearch placeholder="Select a team member" loading={loadingUsers} optionFilterProp="children">
+            {users.map((u) => <Option key={u.id} value={u.id}>{u.fullName}</Option>)}
           </Select>
         </Form.Item>
 
         <Flex justify="flex-end" gap={8}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button
-            htmlType="submit"
-            loading={isPending}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-          >
+          <Button htmlType="submit" loading={isPending} style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}>
             Assign
           </Button>
         </Flex>
@@ -303,14 +232,14 @@ const PricingRequestsPage = () => {
     deletePricingRequest,
   } = usePricingRequestsActions();
 
-  const [tab,         setTab]         = useState<TabKey>("all");
-  const [pageNumber,  setPageNumber]  = useState(1);
-  const [pageSize,    setPageSize]    = useState(10);
-  const [statusFilter, setStatusFilter] = useState<number | undefined>();
+  const [tab,            setTab]            = useState<TabKey>("all");
+  const [pageNumber,     setPageNumber]     = useState(1);
+  const [pageSize,       setPageSize]       = useState(10);
+  const [statusFilter,   setStatusFilter]   = useState<number | undefined>();
   const [priorityFilter, setPriorityFilter] = useState<number | undefined>();
-  const [showCreate,  setShowCreate]  = useState(false);
-  const [showAssign,  setShowAssign]  = useState(false);
-  const [assignTarget, setAssignTarget] = useState<string | null>(null);
+  const [showCreate,     setShowCreate]     = useState(false);
+  const [showAssign,     setShowAssign]     = useState(false);
+  const [assignTarget,   setAssignTarget]   = useState<string | null>(null);
 
   const load = (t = tab, p = pageNumber, ps = pageSize) => {
     const query = { pageNumber: p, pageSize: ps, status: statusFilter, priority: priorityFilter };
@@ -337,10 +266,7 @@ const PricingRequestsPage = () => {
     load();
   };
 
-  const handleAssignClick = (id: string) => {
-    setAssignTarget(id);
-    setShowAssign(true);
-  };
+  const handleAssignClick = (id: string) => { setAssignTarget(id); setShowAssign(true); };
 
   const handleAssign = async (payload: AssignPricingRequestPayload) => {
     if (!assignTarget) return;
@@ -350,15 +276,8 @@ const PricingRequestsPage = () => {
     load();
   };
 
-  const handleComplete = async (id: string) => {
-    await completePricingRequest(id);
-    load();
-  };
-
-  const handleDelete = async (id: string) => {
-    await deletePricingRequest(id);
-    load();
-  };
+  const handleComplete = async (id: string) => { await completePricingRequest(id); load(); };
+  const handleDelete   = async (id: string) => { await deletePricingRequest(id);   load(); };
 
   const columns: ColumnsType<PricingRequest> = [
     {
@@ -368,9 +287,7 @@ const PricingRequestsPage = () => {
         <Flex vertical gap={2}>
           <Text className={styles.cellPrimary}>{title}</Text>
           {record.opportunityTitle && (
-            <Text className={styles.cellMuted} style={{ fontSize: 12 }}>
-              {record.opportunityTitle}
-            </Text>
+            <Text className={styles.cellMuted} style={{ fontSize: 12 }}>{record.opportunityTitle}</Text>
           )}
         </Flex>
       ),
@@ -378,7 +295,6 @@ const PricingRequestsPage = () => {
     {
       title: "Status",
       dataIndex: "status",
-      width: 120,
       render: (status: number) => {
         const s = STATUS[status];
         return s ? <Tag color={s.color} style={{ marginInlineEnd: 0 }}>{s.label}</Tag> : <Tag>Unknown</Tag>;
@@ -387,7 +303,6 @@ const PricingRequestsPage = () => {
     {
       title: "Priority",
       dataIndex: "priority",
-      width: 100,
       render: (priority: number) => {
         const p = PRIORITY[priority];
         return p ? <Tag color={p.color} style={{ marginInlineEnd: 0 }}>{p.label}</Tag> : <Tag>—</Tag>;
@@ -396,27 +311,20 @@ const PricingRequestsPage = () => {
     {
       title: "Assigned To",
       dataIndex: "assignedToName",
-      width: 150,
       render: (name?: string) => (
-        <Text className={name ? styles.cellPrimary : styles.cellMuted}>
-          {name ?? "Unassigned"}
-        </Text>
+        <Text className={name ? styles.cellPrimary : styles.cellMuted}>{name ?? "Unassigned"}</Text>
       ),
     },
     {
       title: "Required By",
       dataIndex: "requiredByDate",
-      width: 130,
       render: (d?: string) => (
-        <Text className={styles.cellMuted}>
-          {d ? dayjs(d).format("DD MMM YYYY") : "—"}
-        </Text>
+        <Text className={styles.cellMuted}>{d ? dayjs(d).format("DD MMM YYYY") : "—"}</Text>
       ),
     },
     {
       title: "Requested By",
       dataIndex: "requestedByName",
-      width: 150,
       render: (name?: string) => (
         <Text className={styles.cellMuted}>{name ?? "—"}</Text>
       ),
@@ -424,10 +332,8 @@ const PricingRequestsPage = () => {
     {
       title: "Actions",
       key: "actions",
-      width: 160,
       render: (_: unknown, record: PricingRequest) => (
         <Flex gap={6} justify="flex-end" wrap="wrap">
-          {/* Assign — show if unassigned and user is manager */}
           {record.status === 1 && canManage() && (
             <Tooltip title="Assign to team member">
               <Button
@@ -440,34 +346,15 @@ const PricingRequestsPage = () => {
               </Button>
             </Tooltip>
           )}
-
-          {/* Complete — show if in progress */}
           {record.status === 2 && (
-            <Popconfirm
-              title="Mark this pricing request as complete?"
-              okText="Complete"
-              cancelText="Cancel"
-              onConfirm={() => handleComplete(record.id)}
-            >
-              <Button
-                size="small"
-                icon={<CheckOutlined />}
-                style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", boxShadow: "none" }}
-              >
+            <Popconfirm title="Mark this pricing request as complete?" okText="Complete" cancelText="Cancel" onConfirm={() => handleComplete(record.id)}>
+              <Button size="small" icon={<CheckOutlined />} style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", boxShadow: "none" }}>
                 Complete
               </Button>
             </Popconfirm>
           )}
-
-          {/* Delete — only pending requests, admin/manager only */}
           {record.status === 1 && canManage() && (
-            <Popconfirm
-              title="Delete this pricing request?"
-              okText="Delete"
-              cancelText="Cancel"
-              okButtonProps={{ danger: true }}
-              onConfirm={() => handleDelete(record.id)}
-            >
+            <Popconfirm title="Delete this pricing request?" okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => handleDelete(record.id)}>
               <Button size="small" danger icon={<DeleteOutlined />} style={{ boxShadow: "none" }}>
                 Delete
               </Button>
@@ -500,19 +387,13 @@ const PricingRequestsPage = () => {
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
-      {/* Header */}
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Pricing Requests</Title>
-        <Button
-          icon={<PlusOutlined />}
-          className={styles.primaryBtn}
-          onClick={() => setShowCreate(true)}
-        >
+        <Button icon={<PlusOutlined />} className={styles.primaryBtn} onClick={() => setShowCreate(true)}>
           New Request
         </Button>
       </Flex>
 
-      {/* Filters — only shown on "all" tab */}
       {tab === "all" && (
         <Flex gap={12}>
           <Select
@@ -543,37 +424,21 @@ const PricingRequestsPage = () => {
         </Flex>
       )}
 
-      {/* Table Card with Tabs */}
       <Card className={styles.card} variant="outlined">
         <Tabs
           className={styles.tabs}
           activeKey={tab}
           onChange={(k) => { setTab(k as TabKey); setPageNumber(1); }}
           items={[
-            { key: "all",     label: "All Requests",     children: <TableContent /> },
-            { key: "mine",    label: "My Requests",       children: <TableContent /> },
-            ...(canManage()
-              ? [{ key: "pending", label: "Unassigned", children: <TableContent /> }]
-              : []),
+            { key: "all",     label: "All Requests", children: <TableContent /> },
+            { key: "mine",    label: "My Requests",  children: <TableContent /> },
+            ...(canManage() ? [{ key: "pending", label: "Unassigned", children: <TableContent /> }] : []),
           ]}
         />
       </Card>
 
-      {/* Create Modal */}
-      <CreateModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onSubmit={handleCreate}
-        isPending={state.isPending}
-      />
-
-      {/* Assign Modal */}
-      <AssignModal
-        open={showAssign}
-        onClose={() => { setShowAssign(false); setAssignTarget(null); }}
-        onSubmit={handleAssign}
-        isPending={state.isPending}
-      />
+      <CreateModal open={showCreate} onClose={() => setShowCreate(false)} onSubmit={handleCreate} isPending={state.isPending} />
+      <AssignModal open={showAssign} onClose={() => { setShowAssign(false); setAssignTarget(null); }} onSubmit={handleAssign} isPending={state.isPending} />
 
     </Flex>
   );

@@ -11,7 +11,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     margin-bottom: 0 !important;
   `,
 
-  // ── Add / Create button ─────────────────────────────────────────────────────
   primaryBtn: css`
     background-color: #707070 !important;
     border: none !important;
@@ -27,9 +26,8 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
-  // ── Table card ──────────────────────────────────────────────────────────────
   card: css`
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(112, 112, 112, 0.35) !important;
     border-radius: 12px !important;
 
@@ -38,7 +36,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
-  // ── Main table ──────────────────────────────────────────────────────────────
   table: css`
     .ant-table {
       background: transparent !important;
@@ -85,7 +82,7 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     .ant-pagination-item,
     .ant-pagination-prev .ant-pagination-item-link,
     .ant-pagination-next .ant-pagination-item-link {
-      background-color: #707070 !important;
+      background-color: rgba(255, 255, 255, 0.06) !important;
       border: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
@@ -120,7 +117,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
       color: rgba(255, 255, 255, 0.35) !important;
     }
 
-    /* page-size selector */
     .ant-pagination .ant-select .ant-select-selector {
       background-color: #707070 !important;
       border: none !important;
@@ -140,7 +136,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
-  // ── Table cell text ─────────────────────────────────────────────────────────
   cellPrimary: css`
     color: rgba(255, 255, 255, 0.9) !important;
     font-weight: 600;
@@ -150,7 +145,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     color: rgba(255, 255, 255, 0.55) !important;
   `,
 
-  // ── Detail Drawer ───────────────────────────────────────────────────────────
   drawerCard: css`
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(112, 112, 112, 0.25) !important;
@@ -174,7 +168,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     font-size: 13px;
   `,
 
-  // ── Line items table inside drawer ──────────────────────────────────────────
   lineItemTable: css`
     .ant-table {
       background: transparent !important;
@@ -208,7 +201,6 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
-  // ── Totals section ──────────────────────────────────────────────────────────
   totalsRow: css`
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(112, 112, 112, 0.25);

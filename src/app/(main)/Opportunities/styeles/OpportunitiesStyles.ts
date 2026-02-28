@@ -42,7 +42,7 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
     }
 
     .ant-tabs-tab {
-      color: rgba(255, 255, 255, 0.5);
+      color: #ffffff;
     }
 
     .ant-tabs-tab-active .ant-tabs-tab-btn {
@@ -50,7 +50,7 @@ export const useOpportunitiesPageStyles = createStyles(({ css, token }) => ({
     }
 
     .ant-tabs-tab:hover .ant-tabs-tab-btn {
-      color: #ffffff !important;
+      color: rgba(112, 112, 112, 0.9) !important;
     }
 
     .ant-tabs-ink-bar {

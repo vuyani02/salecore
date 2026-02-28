@@ -68,7 +68,7 @@ export const usePricingRequestsPageStyles = createStyles(({ css }) => ({
     }
 
     .ant-tabs-tab {
-      color: rgba(255, 255, 255, 0.5);
+      color: #ffffff;
     }
 
     .ant-tabs-tab-active .ant-tabs-tab-btn {
@@ -76,7 +76,7 @@ export const usePricingRequestsPageStyles = createStyles(({ css }) => ({
     }
 
     .ant-tabs-tab:hover .ant-tabs-tab-btn {
-      color: #ffffff !important;
+      color: rgba(112, 112, 112, 0.9) !important;
     }
 
     .ant-tabs-ink-bar {
@@ -173,7 +173,6 @@ export const usePricingRequestsPageStyles = createStyles(({ css }) => ({
       color: rgba(255, 255, 255, 0.35) !important;
     }
 
-    /* page-size selector */
     .ant-pagination .ant-select .ant-select-selector {
       background-color: #707070 !important;
       border: none !important;

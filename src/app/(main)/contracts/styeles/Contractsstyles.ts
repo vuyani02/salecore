@@ -1,7 +1,7 @@
 "use client";
 import { createStyles } from "antd-style";
 
-export const useClientsPageStyles = createStyles(({ css }) => ({
+export const useContractsPageStyles = createStyles(({ css }) => ({
   wrapper: css`
     width: 100%;
   `,
@@ -26,6 +26,39 @@ export const useClientsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
+  filterSelect: css`
+    .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 6px !important;
+      color: #ffffff !important;
+    }
+
+    &:hover .ant-select-selector,
+    &.ant-select-focused .ant-select-selector {
+      background-color: #70707081 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .ant-select-arrow,
+    .ant-select-clear {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .ant-select-selection-placeholder {
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+  `,
+
+  expiringBanner: css`
+    background: rgba(220, 100, 30, 0.12) !important;
+    border: 1px solid rgba(220, 100, 30, 0.35) !important;
+    border-radius: 10px !important;
+    padding: 12px 16px;
+  `,
+
   card: css`
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(112, 112, 112, 0.35) !important;
@@ -33,6 +66,36 @@ export const useClientsPageStyles = createStyles(({ css }) => ({
 
     .ant-card-body {
       padding: 0 !important;
+    }
+  `,
+
+  tabs: css`
+    .ant-tabs-nav {
+      padding: 0 16px;
+    }
+
+    .ant-tabs-tab {
+      color: #ffffff;
+    }
+
+    .ant-tabs-tab-active .ant-tabs-tab-btn {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .ant-tabs-tab:hover .ant-tabs-tab-btn {
+      color: rgba(112, 112, 112, 0.9) !important;
+    }
+
+    .ant-tabs-ink-bar {
+      background: #ffffff;
+    }
+
+    .ant-tabs-nav::before {
+      border-bottom-color: rgba(112, 112, 112, 0.35);
+    }
+
+    .ant-tabs-content-holder {
+      padding: 0;
     }
   `,
 
@@ -69,7 +132,6 @@ export const useClientsPageStyles = createStyles(({ css }) => ({
       color: rgba(255, 255, 255, 0.4) !important;
     }
 
-    /* ── Pagination ─────────────────────────────────────────────────────────── */
     .ant-pagination {
       padding: 16px !important;
       margin: 0 !important;
@@ -82,7 +144,7 @@ export const useClientsPageStyles = createStyles(({ css }) => ({
     .ant-pagination-item,
     .ant-pagination-prev .ant-pagination-item-link,
     .ant-pagination-next .ant-pagination-item-link {
-      background-color: #707070 !important;
+      background-color: rgba(255, 255, 255, 0.06) !important;
       border: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
@@ -96,9 +158,7 @@ export const useClientsPageStyles = createStyles(({ css }) => ({
         background-color: #70707081 !important;
         border: none !important;
 
-        a, button {
-          color: #ffffff !important;
-        }
+        a, button { color: #ffffff !important; }
       }
     }
 
