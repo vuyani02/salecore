@@ -253,7 +253,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) 
           </Text>
         </Flex>
       }
-      open={open} onCancel={handleClose} footer={null} destroyOnClose width={720}
+      open={open} onCancel={handleClose} footer={null} destroyOnHidden width={720}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ currency: "ZAR", taxRate: 15 }}>
 
@@ -356,7 +356,7 @@ const RejectModal = ({ open, onClose, onSubmit, isPending }: IRejectModalProps) 
   };
 
   return (
-    <Modal title="Reject Proposal" open={open} onCancel={onClose} onOk={handleSubmit} okText="Reject" okButtonProps={{ danger: true, loading: isPending }} destroyOnClose>
+    <Modal title="Reject Proposal" open={open} onCancel={onClose} onOk={handleSubmit} okText="Reject" okButtonProps={{ danger: true, loading: isPending }} destroyOnHidden>
       <Flex vertical gap={8}>
         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Please provide a reason for rejection:</Text>
         <TextArea rows={3} value={reason} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)} placeholder="e.g. Pricing too high, revise and resubmit" />

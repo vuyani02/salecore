@@ -104,7 +104,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
   };
 
   return (
-    <Modal title="Create Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnClose width={560}>
+    <Modal title="Create Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnHidden width={560}>
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ priority: 2 }}>
 
         <Form.Item name="title" label="Title" rules={[{ required: true, message: "Title is required" }]}>
@@ -198,7 +198,7 @@ const AssignModal = ({ open, onClose, onSubmit, isPending }: AssignModalProps) =
   };
 
   return (
-    <Modal title="Assign Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnClose width={400}>
+    <Modal title="Assign Pricing Request" open={open} onCancel={onClose} footer={null} destroyOnHidden width={400}>
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           name="userId"

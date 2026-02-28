@@ -87,7 +87,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
   };
 
   return (
-    <Modal title="Create Contract" open={open} onCancel={onClose} footer={null} destroyOnClose width={580}>
+    <Modal title="Create Contract" open={open} onCancel={onClose} footer={null} destroyOnHidden width={580}>
       <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ currency: "ZAR", autoRenew: false, renewalNoticePeriodDays: 30 }}>
 
         <Form.Item name="title" label="Contract Title" rules={[{ required: true, message: "Title is required" }]}>
@@ -193,7 +193,7 @@ const RenewalModal = ({ open, onClose, onSubmit, isPending, currentEndDate, curr
   };
 
   return (
-    <Modal title="Create Renewal" open={open} onCancel={onClose} footer={null} destroyOnClose width={480}>
+    <Modal title="Create Renewal" open={open} onCancel={onClose} footer={null} destroyOnHidden width={480}>
       <Form form={form} layout="vertical" onFinish={handleFinish}>
 
         {currentEndDate && (
