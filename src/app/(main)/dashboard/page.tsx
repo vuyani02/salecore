@@ -143,7 +143,7 @@ const DashboardPage = () => {
   );
 
   return (
-    <>
+    <div className={styles.wrapper}>
       <Row gutter={[16, 16]}>
         {kpis.map(({ label, ...rest }) => (
           <Col key={label} xs={24} sm={12} md={6}>
@@ -190,7 +190,7 @@ const DashboardPage = () => {
           <TopSalesRepsCard reps={topSalesItems} leaderboardHref="/reports" />
         </Col>
       </Row>
-    </>
+    </div>
   );
 };
 

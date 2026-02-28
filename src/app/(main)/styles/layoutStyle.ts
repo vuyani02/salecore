@@ -8,7 +8,7 @@ export const useMainLayoutStyles = createStyles(({ css }) => ({
   `,
 
   siderOffset: css`
-    margin-left:22rem;
+    margin-left: 22rem;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -17,7 +17,7 @@ export const useMainLayoutStyles = createStyles(({ css }) => ({
   content: css`
     flex: 1;
     padding: 18px 24px;
-    max-width: 70rem;
+    min-width: 70rem;
   `,
 
   center: css`

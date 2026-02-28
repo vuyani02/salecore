@@ -2,7 +2,7 @@
 import { createStyles } from "antd-style";
 
 export const useDashboardPageStyles = createStyles(({ css }) => ({
-  grid: css`
+  wrapper: css`
     width: 100%;
   `,
   section: css`

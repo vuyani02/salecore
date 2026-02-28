@@ -17,7 +17,6 @@ import type { Opportunity, CreateOpportunityPayload } from "@/types/opportunitie
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const stageColor = (stage: number) => {
   const map: Record<number, string> = {
     1: "purple", 2: "blue", 3: "gold",
@@ -234,7 +233,6 @@ const OpportunitiesPage = () => {
     {
       title: "Stage",
       dataIndex: "stage",
-      width: 140,
       render: (stage: number, record) => (
         <Tag color={stageColor(stage)} style={{ marginInlineEnd: 0 }}>
           {record.stageName ?? String(stage)}
@@ -244,7 +242,6 @@ const OpportunitiesPage = () => {
     {
       title: "Value",
       dataIndex: "estimatedValue",
-      width: 130,
       render: (v: number, record) => (
         <Text className={styles.cellPrimary}>{formatValue(v, record.currency)}</Text>
       ),
@@ -252,13 +249,11 @@ const OpportunitiesPage = () => {
     {
       title: "Probability",
       dataIndex: "probability",
-      width: 110,
       render: (v: number) => <Text className={styles.cellMuted}>{v}%</Text>,
     },
     {
       title: "Close Date",
       dataIndex: "expectedCloseDate",
-      width: 130,
       render: (d: string) => (
         <Text className={styles.cellMuted}>
           {d ? dayjs(d).format("DD MMM YYYY") : "—"}
@@ -292,7 +287,6 @@ const OpportunitiesPage = () => {
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
-      {/* Header */}
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Opportunities</Title>
         <Button
@@ -304,7 +298,6 @@ const OpportunitiesPage = () => {
         </Button>
       </Flex>
 
-      {/* Table Card */}
       <Card className={styles.card} variant="outlined">
         <Tabs
           className={styles.tabs}
@@ -317,7 +310,6 @@ const OpportunitiesPage = () => {
         />
       </Card>
 
-      {/* Modal */}
       <CreateModal
         open={showModal}
         onClose={() => setShowModal(false)}

@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   Button, Card, Flex, Form, Input,
   Modal, Select, Table,
-  Tag, Typography,
+  Tag, Tooltip, Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { PlusOutlined } from "@ant-design/icons";
@@ -148,7 +148,7 @@ const ClientsPage = () => {
     {
       title: "Type",
       dataIndex: "clientType",
-      width: 130,
+      width: 120,
       render: (type: number) => {
         const t = CLIENT_TYPES[type];
         return t
@@ -159,14 +159,18 @@ const ClientsPage = () => {
     {
       title: "Website",
       dataIndex: "website",
-      width: 220,
       render: (website: string) =>
         website ? (
-          <a href={website} target="_blank" rel="noreferrer">
-            <Text className={styles.cellMuted} ellipsis={{ tooltip: website }}>
+          <Tooltip title={website} placement="topLeft">
+            <a
+              href={website}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "rgba(255,255,255,0.55)" }}
+            >
               {website}
-            </Text>
-          </a>
+            </a>
+          </Tooltip>
         ) : (
           <Text className={styles.cellMuted}>—</Text>
         ),
