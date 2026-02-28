@@ -7,14 +7,14 @@ import {
   ProposalsActionContext,
   ProposalsStateContext,
   type IProposalsActionContext,
-  type ProposalsQuery,
-  type CreateProposalPayload,
-  type UpdateProposalPayload,
-  type CreateLineItemPayload,
-  type RejectProposalPayload,
-  type ProposalPagedResult,
-  type Proposal,
-  type ProposalLineItem,
+  type IProposalsQuery,
+  type ICreateProposalPayload,
+  type IUpdateProposalPayload,
+  type ICreateLineItemPayload,
+  type IRejectProposalPayload,
+  type IProposalPagedResult,
+  type IProposal,
+  type IProposalLineItem,
 } from "./context";
 import { ProposalsReducer } from "./reducer";
 import {
@@ -35,10 +35,10 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
   const [state, dispatch] = useReducer(ProposalsReducer, INITIAL_STATE);
   const instance = getAxiosInstance();
 
-  const getProposals = async (query?: ProposalsQuery) => {
+  const getProposals = async (query?: IProposalsQuery) => {
     dispatch(getProposalsPending());
     await instance
-      .get<ProposalPagedResult>("/api/proposals", { params: query })
+      .get<IProposalPagedResult>("/api/proposals", { params: query })
       .then((res) => dispatch(getProposalsSuccess(res.data)))
       .catch(() => { dispatch(getProposalsError()); message.error("Failed to load proposals"); });
   };
@@ -46,24 +46,24 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
   const getProposal = async (id: string) => {
     dispatch(getProposalPending());
     await instance
-      .get<Proposal>(`/api/proposals/${id}`)
+      .get<IProposal>(`/api/proposals/${id}`)
       .then((res) => dispatch(getProposalSuccess(res.data)))
       .catch(() => { dispatch(getProposalError()); message.error("Failed to load proposal"); });
   };
 
-  const createProposal = async (payload: CreateProposalPayload) => {
+  const createProposal = async (payload: ICreateProposalPayload) => {
     dispatch(createProposalPending());
     await instance
-      .post<Proposal>("/api/proposals", payload)
-      .then((res) => { dispatch(createProposalSuccess(res.data)); message.success("Proposal created"); })
+      .post<IProposal>("/api/proposals", payload)
+      .then((res) => { dispatch(createProposalSuccess(res.data)); message.success("IProposal created"); })
       .catch(() => { dispatch(createProposalError()); message.error("Failed to create proposal"); });
   };
 
-  const updateProposal = async (id: string, payload: UpdateProposalPayload) => {
+  const updateProposal = async (id: string, payload: IUpdateProposalPayload) => {
     dispatch(updateProposalPending());
     await instance
-      .put<Proposal>(`/api/proposals/${id}`, payload)
-      .then((res) => { dispatch(updateProposalSuccess(res.data)); message.success("Proposal updated"); })
+      .put<IProposal>(`/api/proposals/${id}`, payload)
+      .then((res) => { dispatch(updateProposalSuccess(res.data)); message.success("IProposal updated"); })
       .catch(() => { dispatch(updateProposalError()); message.error("Failed to update proposal"); });
   };
 
@@ -71,22 +71,22 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(deleteProposalPending());
     await instance
       .delete(`/api/proposals/${id}`)
-      .then(() => { dispatch(deleteProposalSuccess(id)); message.success("Proposal deleted"); })
+      .then(() => { dispatch(deleteProposalSuccess(id)); message.success("IProposal deleted"); })
       .catch(() => { dispatch(deleteProposalError()); message.error("Failed to delete proposal"); });
   };
 
-  const addLineItem = async (proposalId: string, payload: CreateLineItemPayload) => {
+  const addLineItem = async (proposalId: string, payload: ICreateLineItemPayload) => {
     dispatch(addLineItemPending());
     await instance
-      .post<ProposalLineItem>(`/api/proposals/${proposalId}/line-items`, payload)
+      .post<IProposalLineItem>(`/api/proposals/${proposalId}/line-items`, payload)
       .then((res) => { dispatch(addLineItemSuccess(res.data)); message.success("Line item added"); })
       .catch(() => { dispatch(addLineItemError()); message.error("Failed to add line item"); });
   };
 
-  const updateLineItem = async (proposalId: string, lineItemId: string, payload: CreateLineItemPayload) => {
+  const updateLineItem = async (proposalId: string, lineItemId: string, payload: ICreateLineItemPayload) => {
     dispatch(updateLineItemPending());
     await instance
-      .put<ProposalLineItem>(`/api/proposals/${proposalId}/line-items/${lineItemId}`, payload)
+      .put<IProposalLineItem>(`/api/proposals/${proposalId}/line-items/${lineItemId}`, payload)
       .then((res) => { dispatch(updateLineItemSuccess(res.data)); message.success("Line item updated"); })
       .catch(() => { dispatch(updateLineItemError()); message.error("Failed to update line item"); });
   };
@@ -102,24 +102,24 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
   const submitProposal = async (id: string) => {
     dispatch(submitProposalPending());
     await instance
-      .put<Proposal>(`/api/proposals/${id}/submit`)
-      .then((res) => { dispatch(submitProposalSuccess(res.data)); message.success("Proposal submitted"); })
+      .put<IProposal>(`/api/proposals/${id}/submit`)
+      .then((res) => { dispatch(submitProposalSuccess(res.data)); message.success("IProposal submitted"); })
       .catch(() => { dispatch(submitProposalError()); message.error("Failed to submit proposal"); });
   };
 
   const approveProposal = async (id: string) => {
     dispatch(approveProposalPending());
     await instance
-      .put<Proposal>(`/api/proposals/${id}/approve`)
-      .then((res) => { dispatch(approveProposalSuccess(res.data)); message.success("Proposal approved"); })
+      .put<IProposal>(`/api/proposals/${id}/approve`)
+      .then((res) => { dispatch(approveProposalSuccess(res.data)); message.success("IProposal approved"); })
       .catch(() => { dispatch(approveProposalError()); message.error("Failed to approve proposal"); });
   };
 
-  const rejectProposal = async (id: string, payload: RejectProposalPayload) => {
+  const rejectProposal = async (id: string, payload: IRejectProposalPayload) => {
     dispatch(rejectProposalPending());
     await instance
-      .put<Proposal>(`/api/proposals/${id}/reject`, payload)
-      .then((res) => { dispatch(rejectProposalSuccess(res.data)); message.success("Proposal rejected"); })
+      .put<IProposal>(`/api/proposals/${id}/reject`, payload)
+      .then((res) => { dispatch(rejectProposalSuccess(res.data)); message.success("IProposal rejected"); })
       .catch(() => { dispatch(rejectProposalError()); message.error("Failed to reject proposal"); });
   };
 
