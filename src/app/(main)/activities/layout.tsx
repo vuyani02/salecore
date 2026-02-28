@@ -2,9 +2,14 @@
 
 import React from "react";
 import { ActivitiesProvider } from "@/providers/activitiesProvider";
+import { UsersProvider } from "@/providers/usersProvider";
 
-const OpportunitiesLayout = ({ children }: { children: React.ReactNode }) => {
-  return <ActivitiesProvider>{children}</ActivitiesProvider>;
+const ActivitiesLayout = ({ children }: { children: React.ReactNode }) => {
+  return (<UsersProvider>
+              <ActivitiesProvider>
+                  {children}
+              </ActivitiesProvider>
+          </UsersProvider>);
 };
 
-export default OpportunitiesLayout;
+export default ActivitiesLayout;

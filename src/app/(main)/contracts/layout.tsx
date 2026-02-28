@@ -3,8 +3,8 @@
 import React from "react";
 import { ContractsProvider } from "@/providers/contractsProvider";
 
-const OpportunitiesLayout = ({ children }: { children: React.ReactNode }) => {
+const ContractsLayout = ({ children }: { children: React.ReactNode }) => {
   return <ContractsProvider>{children}</ContractsProvider>;
 };
 
-export default OpportunitiesLayout;
+export default ContractsLayout;

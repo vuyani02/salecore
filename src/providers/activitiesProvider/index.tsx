@@ -7,11 +7,12 @@ import {
   ActivitiesStateContext,
   ActivitiesActionContext,
   type IActivitiesActionContext,
-  type ActivitiesQuery,
-  type CreateActivityPayload,
-  type UpdateActivityPayload,
-  type ActivityPagedResult,
-  type Activity,
+  type IActivitiesQuery,
+  type ICreateActivityPayload,
+  type IUpdateActivityPayload,
+  type ICompleteActivityPayload,
+  type IActivityPagedResult,
+  type IActivity,
 } from "./context";
 import { ActivitiesReducer } from "./reducer";
 import {
@@ -31,10 +32,10 @@ export const ActivitiesProvider = ({ children }: { children: React.ReactNode }) 
   const [state, dispatch] = useReducer(ActivitiesReducer, INITIAL_STATE);
   const instance = getAxiosInstance();
 
-  const getActivities = async (query?: ActivitiesQuery) => {
+  const getActivities = async (query?: IActivitiesQuery) => {
     dispatch(getActivitiesPending());
     await instance
-      .get<ActivityPagedResult>("/api/activities", { params: query })
+      .get<IActivityPagedResult>("/api/activities", { params: query })
       .then((r) => dispatch(getActivitiesSuccess(r.data)))
       .catch(() => { dispatch(getActivitiesError()); message.error("Failed to load activities"); });
   };
@@ -42,63 +43,63 @@ export const ActivitiesProvider = ({ children }: { children: React.ReactNode }) 
   const getActivity = async (id: string) => {
     dispatch(getActivityPending());
     await instance
-      .get<Activity>(`/api/activities/${id}`)
+      .get<IActivity>(`/api/activities/${id}`)
       .then((r) => dispatch(getActivitySuccess(r.data)))
       .catch(() => { dispatch(getActivityError()); message.error("Failed to load activity"); });
   };
 
-  const getMyActivities = async (query?: ActivitiesQuery) => {
+  const getMyActivities = async (query?: IActivitiesQuery) => {
     dispatch(getMyActivitiesPending());
     await instance
-      .get<ActivityPagedResult>("/api/activities/my-activities", { params: query })
+      .get<IActivityPagedResult>("/api/activities/my-activities", { params: query })
       .then((r) => dispatch(getMyActivitiesSuccess(r.data)))
       .catch(() => { dispatch(getMyActivitiesError()); message.error("Failed to load your activities"); });
   };
 
-  const getUpcomingActivities = async (query?: ActivitiesQuery) => {
+  const getUpcomingActivities = async (daysAhead = 7) => {
     dispatch(getUpcomingPending());
     await instance
-      .get<ActivityPagedResult>("/api/activities/upcoming", { params: query })
+      .get<IActivityPagedResult>("/api/activities/upcoming", { params: { daysAhead } })
       .then((r) => dispatch(getUpcomingSuccess(r.data)))
       .catch(() => { dispatch(getUpcomingError()); message.error("Failed to load upcoming activities"); });
   };
 
-  const getOverdueActivities = async (query?: ActivitiesQuery) => {
+  const getOverdueActivities = async () => {
     dispatch(getOverduePending());
     await instance
-      .get<ActivityPagedResult>("/api/activities/overdue", { params: query })
+      .get<IActivityPagedResult>("/api/activities/overdue")
       .then((r) => dispatch(getOverdueSuccess(r.data)))
       .catch(() => { dispatch(getOverdueError()); message.error("Failed to load overdue activities"); });
   };
 
-  const createActivity = async (payload: CreateActivityPayload) => {
+  const createActivity = async (payload: ICreateActivityPayload) => {
     dispatch(createActivityPending());
     await instance
-      .post<Activity>("/api/activities", payload)
+      .post<IActivity>("/api/activities", payload)
       .then((r) => { dispatch(createActivitySuccess(r.data)); message.success("Activity created"); })
       .catch(() => { dispatch(createActivityError()); message.error("Failed to create activity"); });
   };
 
-  const updateActivity = async (id: string, payload: UpdateActivityPayload) => {
+  const updateActivity = async (id: string, payload: IUpdateActivityPayload) => {
     dispatch(updateActivityPending());
     await instance
-      .put<Activity>(`/api/activities/${id}`, payload)
+      .put<IActivity>(`/api/activities/${id}`, payload)
       .then((r) => { dispatch(updateActivitySuccess(r.data)); message.success("Activity updated"); })
       .catch(() => { dispatch(updateActivityError()); message.error("Failed to update activity"); });
   };
 
-  const completeActivity = async (id: string) => {
+  const completeActivity = async (id: string, payload: ICompleteActivityPayload) => {
     dispatch(completeActivityPending());
     await instance
-      .put<Activity>(`/api/activities/${id}/complete`)
-      .then((r) => { dispatch(completeActivitySuccess(r.data)); message.success("Activity marked as complete"); })
+      .put<IActivity>(`/api/activities/${id}/complete`, payload)
+      .then((r) => { dispatch(completeActivitySuccess(r.data)); message.success("Activity completed"); })
       .catch(() => { dispatch(completeActivityError()); message.error("Failed to complete activity"); });
   };
 
   const cancelActivity = async (id: string) => {
     dispatch(cancelActivityPending());
     await instance
-      .put<Activity>(`/api/activities/${id}/cancel`)
+      .put<IActivity>(`/api/activities/${id}/cancel`)
       .then((r) => { dispatch(cancelActivitySuccess(r.data)); message.success("Activity cancelled"); })
       .catch(() => { dispatch(cancelActivityError()); message.error("Failed to cancel activity"); });
   };

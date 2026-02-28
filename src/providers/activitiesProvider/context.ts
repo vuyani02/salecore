@@ -2,38 +2,43 @@ import { createContext } from "react";
 
 // ActivityType:   1=Meeting, 2=Call, 3=Email, 4=Task, 5=Presentation, 6=Other
 // ActivityStatus: 1=Scheduled, 2=Completed, 3=Cancelled
-// RelatedToType:  1=Client, 2=Opportunity, 3=Proposal, 4=Contract, 5=Activity
+// Priority:       1=Low, 2=Medium, 3=High, 4=Urgent
+// RelatedToType:  1=Client, 2=Opportunity, 3=Proposal, 4=Contract
 
-export interface Activity {
+export interface IActivity {
   id: string;
-  title: string;
+  type: number;
+  typeName?: string;
+  subject: string;
   description?: string;
-  activityType: number;
-  activityTypeName?: string;
+  priority?: number;
+  priorityName?: string;
   status: number;
   statusName?: string;
-  scheduledAt?: string;
+  dueDate?: string;
   completedAt?: string;
-  durationMinutes?: number;
+  duration?: number;
+  location?: string;
   assignedToId?: string;
   assignedToName?: string;
   relatedToType?: number;
   relatedToId?: string;
   relatedToName?: string;
+  outcome?: string;
   createdAt?: string;
 }
 
-export interface ActivityPagedResult {
-  items: Activity[];
+export interface IActivityPagedResult {
+  items: IActivity[];
   totalCount: number;
   totalPages: number;
   pageNumber: number;
   pageSize: number;
 }
 
-export interface ActivitiesQuery {
+export interface IActivitiesQuery {
   status?: number;
-  activityType?: number;
+  type?: number;
   assignedToId?: string;
   relatedToType?: number;
   relatedToId?: string;
@@ -41,42 +46,48 @@ export interface ActivitiesQuery {
   pageSize?: number;
 }
 
-export interface CreateActivityPayload {
-  title: string;
+export interface ICreateActivityPayload {
+  type: number;
+  subject: string;
   description?: string;
-  activityType: number;
-  scheduledAt?: string;
-  durationMinutes?: number;
+  priority?: number;
+  dueDate?: string;
+  duration?: number;
+  location?: string;
   assignedToId?: string;
   relatedToType?: number;
   relatedToId?: string;
 }
 
-export interface UpdateActivityPayload extends CreateActivityPayload {}
+export interface IUpdateActivityPayload extends ICreateActivityPayload {}
+
+export interface ICompleteActivityPayload {
+  outcome?: string;
+}
 
 export interface IActivitiesStateContext {
   isPending: boolean;
   isSuccess: boolean;
   isError: boolean;
-  activities?: ActivityPagedResult;
-  activity?: Activity;
-  myActivities?: ActivityPagedResult;
-  upcomingActivities?: ActivityPagedResult;
-  overdueActivities?: ActivityPagedResult;
-  createdActivity?: Activity;
-  updatedActivity?: Activity;
+  activities?: IActivityPagedResult;
+  activity?: IActivity;
+  myActivities?: IActivityPagedResult;
+  upcomingActivities?: IActivityPagedResult;
+  overdueActivities?: IActivityPagedResult;
+  createdActivity?: IActivity;
+  updatedActivity?: IActivity;
   deletedActivityId?: string;
 }
 
 export interface IActivitiesActionContext {
-  getActivities: (query?: ActivitiesQuery) => void;
+  getActivities: (query?: IActivitiesQuery) => void;
   getActivity: (id: string) => void;
-  getMyActivities: (query?: ActivitiesQuery) => void;
-  getUpcomingActivities: (query?: ActivitiesQuery) => void;
-  getOverdueActivities: (query?: ActivitiesQuery) => void;
-  createActivity: (payload: CreateActivityPayload) => void;
-  updateActivity: (id: string, payload: UpdateActivityPayload) => void;
-  completeActivity: (id: string) => void;
+  getMyActivities: (query?: IActivitiesQuery) => void;
+  getUpcomingActivities: (daysAhead?: number) => void;
+  getOverdueActivities: () => void;
+  createActivity: (payload: ICreateActivityPayload) => void;
+  updateActivity: (id: string, payload: IUpdateActivityPayload) => void;
+  completeActivity: (id: string, payload: ICompleteActivityPayload) => void;
   cancelActivity: (id: string) => void;
   deleteActivity: (id: string) => void;
 }

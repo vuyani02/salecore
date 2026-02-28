@@ -12,19 +12,21 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useActivitiesState, useActivitiesActions } from "@/providers/activitiesProvider";
+import { useUsersState, useUsersActions } from "@/providers/usersProvider";
+import { useClientsState, useClientsActions } from "@/providers/clientsProvider";
+import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunitiesProvider";
 import { useActivitiesPageStyles } from "./styeles/Activitiesstyles";
-import { getAxiosInstance } from "@/util/axiosInstance";
-import type { Activity, CreateActivityPayload } from "@/providers/activitiesProvider/context";
+import type {
+  IActivity,
+  ICreateActivityPayload,
+  ICompleteActivityPayload,
+} from "@/providers/activitiesProvider/context";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-// ActivityType:   1=Meeting, 2=Call, 3=Email, 4=Task, 5=Presentation, 6=Other
-// ActivityStatus: 1=Scheduled, 2=Completed, 3=Cancelled
-// RelatedToType:  1=Client, 2=Opportunity, 3=Proposal, 4=Contract
-
 const ACTIVITY_TYPE: Record<number, { label: string; color: string }> = {
   1: { label: "Meeting",      color: "blue"    },
   2: { label: "Call",         color: "cyan"    },
@@ -35,9 +37,16 @@ const ACTIVITY_TYPE: Record<number, { label: string; color: string }> = {
 };
 
 const ACTIVITY_STATUS: Record<number, { label: string; color: string }> = {
-  1: { label: "Scheduled",  color: "blue"    },
-  2: { label: "Completed",  color: "green"   },
-  3: { label: "Cancelled",  color: "default" },
+  1: { label: "Scheduled", color: "blue"    },
+  2: { label: "Completed", color: "green"   },
+  3: { label: "Cancelled", color: "default" },
+};
+
+const PRIORITY: Record<number, { label: string; color: string }> = {
+  1: { label: "Low",    color: "default" },
+  2: { label: "Medium", color: "gold"    },
+  3: { label: "High",   color: "orange"  },
+  4: { label: "Urgent", color: "red"     },
 };
 
 const RELATED_TO_TYPES = [
@@ -51,89 +60,122 @@ const TYPE_OPTIONS = Object.entries(ACTIVITY_TYPE).map(([k, v]) => ({ value: Num
 
 type TabKey = "all" | "mine" | "upcoming" | "overdue";
 
-interface RelatedOption { id: string; name?: string; title?: string; }
-interface UserOption    { id: string; fullName: string; }
-
-// ── Create Modal ──────────────────────────────────────────────────────────────
-interface CreateModalProps {
+// ── Complete Modal ────────────────────────────────────────────────────────────
+interface ICompleteModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: CreateActivityPayload) => void;
+  onSubmit: (payload: ICompleteActivityPayload) => void;
   isPending: boolean;
 }
 
-const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) => {
-  const [form]           = Form.useForm();
-  const [users,          setUsers]          = useState<UserOption[]>([]);
-  const [relatedOptions, setRelatedOptions] = useState<RelatedOption[]>([]);
-  const [loadingUsers,   setLoadingUsers]   = useState(false);
-  const [loadingRelated, setLoadingRelated] = useState(false);
-  const [relatedType,    setRelatedType]    = useState<number | undefined>();
-  const instance = getAxiosInstance();
+const CompleteModal = ({ open, onClose, onSubmit, isPending }: ICompleteModalProps) => {
+  const [form] = Form.useForm();
+
+  const handleFinish = (values: any) => {
+    onSubmit({ outcome: values.outcome });
+    form.resetFields();
+  };
+
+  return (
+    <Modal title="Complete Activity" open={open} onCancel={onClose} footer={null} destroyOnClose width={440}>
+      <Form form={form} layout="vertical" onFinish={handleFinish}>
+        <Form.Item
+          name="outcome"
+          label="Outcome"
+          extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>What was the result of this activity?</Text>}
+        >
+          <TextArea rows={3} placeholder="e.g. Client confirmed interest. Follow-up scheduled." />
+        </Form.Item>
+        <Flex justify="flex-end" gap={8} style={{ marginTop: 8 }}>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            htmlType="submit"
+            loading={isPending}
+            style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
+          >
+            Mark Complete
+          </Button>
+        </Flex>
+      </Form>
+    </Modal>
+  );
+};
+
+// ── Create Modal ──────────────────────────────────────────────────────────────
+interface ICreateModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (payload: ICreateActivityPayload) => void;
+  isPending: boolean;
+}
+
+const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) => {
+  const [form]        = Form.useForm();
+  const [relatedType, setRelatedType] = useState<number | undefined>();
+
+  const usersState           = useUsersState();
+  const { getUsers }         = useUsersActions();
+  const clientsState         = useClientsState();
+  const { getClients }       = useClientsActions();
+  const oppsState            = useOpportunitiesState();
+  const { getOpportunities } = useOpportunitiesActions();
 
   useEffect(() => {
     if (!open) return;
-    setLoadingUsers(true);
-    instance.get("/api/users", { params: { isActive: true, pageSize: 100 } })
-      .then((r) => setUsers(r.data?.items ?? []))
-      .catch(() => setUsers([]))
-      .finally(() => setLoadingUsers(false));
+    if (!usersState.users?.items?.length) getUsers({ isActive: true, pageSize: 100 });
   }, [open]);
 
-  const handleRelatedTypeChange = async (type: number) => {
+  useEffect(() => {
+    if (!relatedType) return;
+    if (relatedType === 1 && !clientsState.clients?.items?.length)
+      getClients({ pageNumber: 1, pageSize: 100 });
+    if (relatedType === 2 && !oppsState.opportunities?.items?.length)
+      getOpportunities({ pageNumber: 1, pageSize: 100 });
+  }, [relatedType]);
+
+  const users         = usersState.users?.items ?? [];
+  const clients       = clientsState.clients?.items ?? [];
+  const opportunities = oppsState.opportunities?.items ?? [];
+
+  const relatedOptions = useMemo(() => {
+    if (relatedType === 1) return clients.map((c)      => ({ id: c.id, label: c.name }));
+    if (relatedType === 2) return opportunities.map((o) => ({ id: o.id, label: o.title }));
+    return [];
+  }, [relatedType, clients, opportunities]);
+
+  const handleRelatedTypeChange = (type: number) => {
     setRelatedType(type);
     form.setFieldValue("relatedToId", undefined);
-    setRelatedOptions([]);
-    if (!type) return;
-
-    const endpointMap: Record<number, string> = {
-      1: "/api/clients",
-      2: "/api/opportunities",
-      3: "/api/proposals",
-      4: "/api/contracts",
-    };
-
-    const endpoint = endpointMap[type];
-    if (!endpoint) return;
-
-    setLoadingRelated(true);
-    try {
-      const r = await instance.get(endpoint, { params: { pageNumber: 1, pageSize: 100 } });
-      setRelatedOptions(r.data?.items ?? []);
-    } catch {
-      setRelatedOptions([]);
-    } finally {
-      setLoadingRelated(false);
-    }
   };
 
   const handleFinish = (values: any) => {
     onSubmit({
-      title:          values.title,
-      description:    values.description,
-      activityType:   values.activityType,
-      scheduledAt:    values.scheduledAt?.toISOString(),
-      durationMinutes: values.durationMinutes,
-      assignedToId:   values.assignedToId,
-      relatedToType:  values.relatedToType,
-      relatedToId:    values.relatedToId,
+      type:          values.type,
+      subject:       values.subject,
+      description:   values.description,
+      priority:      values.priority,
+      dueDate:       values.dueDate?.toISOString(),
+      duration:      values.duration,
+      location:      values.location,
+      assignedToId:  values.assignedToId,
+      relatedToType: values.relatedToType,
+      relatedToId:   values.relatedToId,
     });
     form.resetFields();
     setRelatedType(undefined);
-    setRelatedOptions([]);
   };
 
   return (
-    <Modal title="Log Activity" open={open} onCancel={onClose} footer={null} destroyOnClose width={560}>
-      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ activityType: 1 }}>
+    <Modal title="Log Activity" open={open} onCancel={onClose} footer={null} destroyOnClose width={580}>
+      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ type: 1, priority: 2 }}>
 
-        <Form.Item name="title" label="Title" rules={[{ required: true, message: "Title is required" }]}>
+        <Form.Item name="subject" label="Subject" rules={[{ required: true, message: "Subject is required" }]}>
           <Input placeholder="e.g. Intro call with Acme Corp" />
         </Form.Item>
 
         <Row gutter={12}>
           <Col span={12}>
-            <Form.Item name="activityType" label="Type" rules={[{ required: true }]}>
+            <Form.Item name="type" label="Type" rules={[{ required: true }]}>
               <Select placeholder="Select type">
                 {TYPE_OPTIONS.map((t) => (
                   <Option key={t.value} value={t.value}>
@@ -144,27 +186,48 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="scheduledAt" label="Scheduled At">
-              <DatePicker showTime style={{ width: "100%" }} placeholder="Select date & time" />
+            <Form.Item name="priority" label="Priority">
+              <Select placeholder="Select priority">
+                {Object.entries(PRIORITY).map(([k, v]) => (
+                  <Option key={k} value={Number(k)}>
+                    <Tag color={v.color} style={{ marginInlineEnd: 6 }}>{v.label}</Tag>
+                  </Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
         </Row>
 
         <Row gutter={12}>
           <Col span={12}>
-            <Form.Item
-              name="durationMinutes"
-              label="Duration (minutes)"
-              extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>How long did/will this take?</Text>}
-            >
-              <InputNumber style={{ width: "100%" }} min={1} placeholder="e.g. 30" />
+            <Form.Item name="dueDate" label="Due Date">
+              <DatePicker showTime style={{ width: "100%" }} placeholder="Select date & time" />
             </Form.Item>
           </Col>
           <Col span={12}>
+            <Form.Item name="duration" label="Duration (minutes)">
+              <InputNumber style={{ width: "100%" }} min={1} placeholder="e.g. 60" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={12}>
+          <Col span={12}>
             <Form.Item name="assignedToId" label="Assign To">
-              <Select showSearch placeholder="Assign to team member" loading={loadingUsers} optionFilterProp="children" allowClear>
+              <Select
+                showSearch
+                placeholder="Assign to team member"
+                loading={usersState.isPending}
+                optionFilterProp="children"
+                allowClear
+              >
                 {users.map((u) => <Option key={u.id} value={u.id}>{u.fullName}</Option>)}
               </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="location" label="Location">
+              <Input placeholder="e.g. Microsoft Teams" />
             </Form.Item>
           </Col>
         </Row>
@@ -186,20 +249,18 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
               <Select
                 showSearch
                 placeholder={relatedType ? "Select a record" : "Select entity type first"}
-                loading={loadingRelated}
+                loading={clientsState.isPending || oppsState.isPending}
                 optionFilterProp="children"
                 allowClear
                 disabled={!relatedType}
               >
-                {relatedOptions.map((o) => (
-                  <Option key={o.id} value={o.id}>{o.name ?? o.title ?? o.id}</Option>
-                ))}
+                {relatedOptions.map((o) => <Option key={o.id} value={o.id}>{o.label}</Option>)}
               </Select>
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item name="description" label="Notes">
+        <Form.Item name="description" label="Description">
           <TextArea rows={3} placeholder="Any notes about this activity..." />
         </Form.Item>
 
@@ -227,19 +288,20 @@ const ActivitiesPage = () => {
     createActivity, completeActivity, cancelActivity, deleteActivity,
   } = useActivitiesActions();
 
-  const [tab,          setTab]          = useState<TabKey>("all");
-  const [pageNumber,   setPageNumber]   = useState(1);
-  const [pageSize,     setPageSize]     = useState(10);
-  const [typeFilter,   setTypeFilter]   = useState<number | undefined>();
-  const [statusFilter, setStatusFilter] = useState<number | undefined>();
-  const [showCreate,   setShowCreate]   = useState(false);
+  const [tab,            setTab]            = useState<TabKey>("all");
+  const [pageNumber,     setPageNumber]     = useState(1);
+  const [pageSize,       setPageSize]       = useState(10);
+  const [typeFilter,     setTypeFilter]     = useState<number | undefined>();
+  const [statusFilter,   setStatusFilter]   = useState<number | undefined>();
+  const [showCreate,     setShowCreate]     = useState(false);
+  const [showComplete,   setShowComplete]   = useState(false);
+  const [completeTarget, setCompleteTarget] = useState<string | null>(null);
 
   const load = (t = tab, p = pageNumber, ps = pageSize) => {
-    const query = { pageNumber: p, pageSize: ps, activityType: typeFilter, status: statusFilter };
-    if (t === "all")      getActivities(query);
+    if (t === "all")      getActivities({ pageNumber: p, pageSize: ps, type: typeFilter, status: statusFilter });
     if (t === "mine")     getMyActivities({ pageNumber: p, pageSize: ps });
-    if (t === "upcoming") getUpcomingActivities({ pageNumber: p, pageSize: ps });
-    if (t === "overdue")  getOverdueActivities({ pageNumber: p, pageSize: ps });
+    if (t === "upcoming") getUpcomingActivities(7);
+    if (t === "overdue")  getOverdueActivities();
   };
 
   useEffect(() => { getActivities({ pageNumber: 1, pageSize: 10 }); }, []);
@@ -255,23 +317,35 @@ const ActivitiesPage = () => {
   const items      = useMemo(() => data?.items ?? [], [data]);
   const totalCount = data?.totalCount ?? 0;
 
-  const handleCreate = async (payload: CreateActivityPayload) => {
+  const handleCreate = async (payload: ICreateActivityPayload) => {
     await createActivity(payload);
     setShowCreate(false);
     load();
   };
 
-  const handleComplete = async (id: string) => { await completeActivity(id); load(); };
-  const handleCancel   = async (id: string) => { await cancelActivity(id);   load(); };
-  const handleDelete   = async (id: string) => { await deleteActivity(id);   load(); };
+  const handleCompleteClick = (id: string) => {
+    setCompleteTarget(id);
+    setShowComplete(true);
+  };
 
-  const columns: ColumnsType<Activity> = [
+  const handleComplete = async (payload: ICompleteActivityPayload) => {
+    if (!completeTarget) return;
+    await completeActivity(completeTarget, payload);
+    setShowComplete(false);
+    setCompleteTarget(null);
+    load();
+  };
+
+  const handleCancel = async (id: string) => { await cancelActivity(id); load(); };
+  const handleDelete = async (id: string) => { await deleteActivity(id); load(); };
+
+  const columns: ColumnsType<IActivity> = [
     {
-      title: "Title",
-      dataIndex: "title",
-      render: (title: string, record) => (
+      title: "Subject",
+      dataIndex: "subject",
+      render: (subject: string, record) => (
         <Flex vertical gap={2}>
-          <Text className={styles.cellPrimary}>{title}</Text>
+          <Text className={styles.cellPrimary}>{subject}</Text>
           {record.relatedToName && (
             <Text className={styles.cellMuted} style={{ fontSize: 12 }}>{record.relatedToName}</Text>
           )}
@@ -280,10 +354,19 @@ const ActivitiesPage = () => {
     },
     {
       title: "Type",
-      dataIndex: "activityType",
+      dataIndex: "type",
       render: (type: number) => {
         const t = ACTIVITY_TYPE[type];
         return t ? <Tag color={t.color} style={{ marginInlineEnd: 0 }}>{t.label}</Tag> : <Tag>—</Tag>;
+      },
+    },
+    {
+      title: "Priority",
+      dataIndex: "priority",
+      render: (priority?: number) => {
+        if (!priority) return <Text className={styles.cellMuted}>—</Text>;
+        const p = PRIORITY[priority];
+        return p ? <Tag color={p.color} style={{ marginInlineEnd: 0 }}>{p.label}</Tag> : <Tag>—</Tag>;
       },
     },
     {
@@ -295,19 +378,12 @@ const ActivitiesPage = () => {
       },
     },
     {
-      title: "Scheduled At",
-      dataIndex: "scheduledAt",
+      title: "Due Date",
+      dataIndex: "dueDate",
       render: (d?: string) => (
         <Text className={styles.cellMuted}>
           {d ? dayjs(d).format("DD MMM YYYY HH:mm") : "—"}
         </Text>
-      ),
-    },
-    {
-      title: "Duration",
-      dataIndex: "durationMinutes",
-      render: (v?: number) => (
-        <Text className={styles.cellMuted}>{v ? `${v} min` : "—"}</Text>
       ),
     },
     {
@@ -320,38 +396,41 @@ const ActivitiesPage = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: unknown, record: Activity) => (
+      render: (_: unknown, record: IActivity) => (
         <Flex gap={6} justify="flex-end" wrap="wrap">
-          {/* Complete — Scheduled only */}
           {record.status === 1 && (
-            <Popconfirm title="Mark this activity as complete?" okText="Complete" cancelText="Cancel" onConfirm={() => handleComplete(record.id)}>
-              <Button
-                size="small"
-                icon={<CheckOutlined />}
-                style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", boxShadow: "none" }}
-              >
-                Complete
-              </Button>
-            </Popconfirm>
+            <Button
+              size="small"
+              icon={<CheckOutlined />}
+              style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", boxShadow: "none" }}
+              onClick={() => handleCompleteClick(record.id)}
+            >
+              Complete
+            </Button>
           )}
 
-          {/* Cancel — Scheduled only */}
           {record.status === 1 && (
-            <Popconfirm title="Cancel this activity?" okText="Cancel Activity" cancelText="No" okButtonProps={{ danger: true }} onConfirm={() => handleCancel(record.id)}>
-              <Button
-                size="small"
-                icon={<StopOutlined />}
-                danger
-                style={{ boxShadow: "none" }}
-              >
+            <Popconfirm
+              title="Cancel this activity?"
+              okText="Cancel Activity"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => handleCancel(record.id)}
+            >
+              <Button size="small" icon={<StopOutlined />} danger style={{ boxShadow: "none" }}>
                 Cancel
               </Button>
             </Popconfirm>
           )}
 
-          {/* Delete — Completed or Cancelled */}
           {(record.status === 2 || record.status === 3) && (
-            <Popconfirm title="Delete this activity?" okText="Delete" cancelText="No" okButtonProps={{ danger: true }} onConfirm={() => handleDelete(record.id)}>
+            <Popconfirm
+              title="Delete this activity?"
+              okText="Delete"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+              onConfirm={() => handleDelete(record.id)}
+            >
               <Button size="small" danger icon={<DeleteOutlined />} style={{ boxShadow: "none" }}>
                 Delete
               </Button>
@@ -384,7 +463,6 @@ const ActivitiesPage = () => {
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
-      {/* Header */}
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Activities</Title>
         <Button icon={<PlusOutlined />} className={styles.primaryBtn} onClick={() => setShowCreate(true)}>
@@ -392,7 +470,6 @@ const ActivitiesPage = () => {
         </Button>
       </Flex>
 
-      {/* Filters — All tab only */}
       {tab === "all" && (
         <Flex gap={12}>
           <Select
@@ -421,7 +498,6 @@ const ActivitiesPage = () => {
         </Flex>
       )}
 
-      {/* Table card */}
       <Card className={styles.card} variant="outlined" style={{ width: "100%" }}>
         <Tabs
           className={styles.tabs}
@@ -436,11 +512,17 @@ const ActivitiesPage = () => {
         />
       </Card>
 
-      {/* Create Modal */}
       <CreateModal
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onSubmit={handleCreate}
+        isPending={state.isPending}
+      />
+
+      <CompleteModal
+        open={showComplete}
+        onClose={() => { setShowComplete(false); setCompleteTarget(null); }}
+        onSubmit={handleComplete}
         isPending={state.isPending}
       />
 

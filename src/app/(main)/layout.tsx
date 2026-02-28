@@ -1,8 +1,16 @@
 "use client";
 import React from "react";
-import { Layout, Flex, Typography } from "antd";
+import { Layout, Typography } from "antd";
 import NavBar from "../../components/navbar/NavBar";
 import { useMainLayoutStyles } from "./styles/layoutStyle";
+import { UsersProvider } from "@/providers/usersProvider";
+import { ClientsProvider } from "@/providers/clientsProvider";
+//import { ContactsProvider } from "@/providers/contactsProvider";
+import { OpportunitiesProvider } from "@/providers/opportunitiesProvider";
+import { PricingRequestsProvider } from "@/providers/pricingRequestsProvider";
+import { ProposalsProvider } from "@/providers/proposalsProvider";
+import { ContractsProvider } from "@/providers/contractsProvider";
+import { ActivitiesProvider } from "@/providers/activitiesProvider";
 
 const { Content, Footer } = Layout;
 const { Text } = Typography;
@@ -19,7 +27,21 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       {/* Main content — offset by sidebar width */}
       <div className={styles.siderOffset}>
         <Content className={styles.content}>
-                {children}
+          <UsersProvider>
+            <ClientsProvider>
+                <OpportunitiesProvider>
+                  <PricingRequestsProvider>
+                    <ProposalsProvider>
+                      <ContractsProvider>
+                        <ActivitiesProvider>
+                          {children}
+                        </ActivitiesProvider>
+                      </ContractsProvider>
+                    </ProposalsProvider>
+                  </PricingRequestsProvider>
+                </OpportunitiesProvider>
+            </ClientsProvider>
+          </UsersProvider>
         </Content>
 
         <Footer className={styles.footer}>

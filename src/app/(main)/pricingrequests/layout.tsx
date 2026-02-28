@@ -3,8 +3,8 @@
 import React from "react";
 import { PricingRequestsProvider } from "@/providers/pricingRequestsProvider";
 
-const OpportunitiesLayout = ({ children }: { children: React.ReactNode }) => {
+const PricingRequestsLayout = ({ children }: { children: React.ReactNode }) => {
   return <PricingRequestsProvider>{children}</PricingRequestsProvider>;
 };
 
-export default OpportunitiesLayout;
+export default PricingRequestsLayout;
