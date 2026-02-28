@@ -14,10 +14,10 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useProposalsState, useProposalsActions } from "@/providers/proposalsProvider";
+import { useOpportunitiesState, useOpportunitiesActions } from "@/providers/opportunitiesProvider";
 import { useProposalsPageStyles } from "./styeles/Proposalsstyles";
-import { getAxiosInstance } from "@/util/axiosInstance";
 import type {
-  Proposal, CreateProposalPayload, CreateLineItemPayload,
+  IProposal, ICreateProposalPayload, ICreateLineItemPayload,
 } from "@/providers/proposalsProvider/context";
 
 const { Title, Text } = Typography;
@@ -46,28 +46,25 @@ const fmt = (v?: number | null, currency = "ZAR") => {
   return `${currency === "ZAR" ? "R" : "$"}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const calcLineTotal = (item: CreateLineItemPayload) =>
+const calcLineTotal = (item: ICreateLineItemPayload) =>
   item.quantity * item.unitPrice * (1 - item.discount / 100) * (1 + item.taxRate / 100);
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-interface OpportunityOption { id: string; title: string; }
-
 // ── Line Items ────────────────────────────────────────────────────────────────
-const EMPTY_LINE: CreateLineItemPayload = {
+const EMPTY_LINE: ICreateLineItemPayload = {
   productServiceName: "", description: "",
   quantity: 1, unitPrice: 0, discount: 0, taxRate: 15,
 };
 
-interface LineItemsFormProps {
-  items: CreateLineItemPayload[];
+interface ILineItemsFormProps {
+  items: ICreateLineItemPayload[];
   currency: string;
-  onChange: (items: CreateLineItemPayload[]) => void;
+  onChange: (items: ICreateLineItemPayload[]) => void;
 }
 
-const LineItemsForm = ({ items, currency, onChange }: LineItemsFormProps) => {
+const LineItemsForm = ({ items, currency, onChange }: ILineItemsFormProps) => {
   const addRow    = () => onChange([...items, { ...EMPTY_LINE }]);
   const removeRow = (i: number) => onChange(items.filter((_, idx) => idx !== i));
-  const update    = (i: number, key: keyof CreateLineItemPayload, val: string | number) => {
+  const update    = (i: number, key: keyof ICreateLineItemPayload, val: string | number) => {
     const next = [...items];
     (next[i] as any)[key] = val;
     onChange(next);
@@ -202,32 +199,38 @@ const SectionLabel = ({ step, title, subtitle }: { step: number; title: string; 
 );
 
 // ── Create Modal ──────────────────────────────────────────────────────────────
-interface CreateModalProps {
+interface ICreateModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: CreateProposalPayload) => void;
+  onSubmit: (payload: ICreateProposalPayload) => void;
   isPending: boolean;
 }
 
-const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) => {
-  const [form]          = Form.useForm();
-  const [opportunities, setOpportunities] = useState<OpportunityOption[]>([]);
-  const [loadingOpp,    setLoadingOpp]    = useState(false);
-  const [lineItems,     setLineItems]     = useState<CreateLineItemPayload[]>([{ ...EMPTY_LINE }]);
-  const [currency,      setCurrency]      = useState("ZAR");
-  const instance = getAxiosInstance();
+const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) => {
+  const [form]      = Form.useForm();
+  const [lineItems, setLineItems] = useState<ICreateLineItemPayload[]>([{ ...EMPTY_LINE }]);
+  const [currency,  setCurrency]  = useState("ZAR");
+
+  const oppsState            = useOpportunitiesState();
+  const { getOpportunities } = useOpportunitiesActions();
 
   useEffect(() => {
     if (!open) return;
-    setLoadingOpp(true);
-    instance.get("/api/opportunities", { params: { pageNumber: 1, pageSize: 100 } })
-      .then((res) => setOpportunities(res.data?.items ?? []))
-      .catch(() => setOpportunities([]))
-      .finally(() => setLoadingOpp(false));
+    if (!oppsState.opportunities?.items?.length)
+      getOpportunities({ pageNumber: 1, pageSize: 100 });
   }, [open]);
 
+  const opportunities = oppsState.opportunities?.items ?? [];
+
   const handleFinish = (values: any) => {
-    onSubmit({ opportunityId: values.opportunityId, title: values.title, description: values.description, currency: values.currency, validUntil: values.validUntil?.toISOString(), lineItems });
+    onSubmit({
+      opportunityId: values.opportunityId,
+      title:         values.title,
+      description:   values.description,
+      currency:      values.currency,
+      validUntil:    values.validUntil?.toISOString(),
+      lineItems,
+    });
     form.resetFields();
     setLineItems([{ ...EMPTY_LINE }]);
     setCurrency("ZAR");
@@ -269,7 +272,13 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
           }
           rules={[{ required: true, message: "Please select an opportunity" }]}
         >
-          <Select showSearch placeholder="Search and select an opportunity…" loading={loadingOpp} optionFilterProp="children" notFoundContent={loadingOpp ? "Loading…" : "No opportunities found"}>
+          <Select
+            showSearch
+            placeholder="Search and select an opportunity…"
+            loading={oppsState.isPending}
+            optionFilterProp="children"
+            notFoundContent={oppsState.isPending ? "Loading…" : "No opportunities found"}
+          >
             {opportunities.map((o) => <Option key={o.id} value={o.id}>{o.title}</Option>)}
           </Select>
         </Form.Item>
@@ -277,7 +286,12 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
         <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0 16px" }} />
         <SectionLabel step={2} title="Proposal Details" subtitle="Give this proposal a clear name and set the terms" />
 
-        <Form.Item name="title" label="Proposal Title" extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>e.g. "Q2 2026 – Annual Support Agreement"</Text>} rules={[{ required: true, message: "Please enter a proposal title" }]}>
+        <Form.Item
+          name="title"
+          label="Proposal Title"
+          extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>e.g. "Q2 2026 – Annual Support Agreement"</Text>}
+          rules={[{ required: true, message: "Please enter a proposal title" }]}
+        >
           <Input placeholder="Give this proposal a descriptive name" />
         </Form.Item>
 
@@ -325,14 +339,14 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: CreateModalProps) =
 };
 
 // ── Reject Modal ──────────────────────────────────────────────────────────────
-interface RejectModalProps {
+interface IRejectModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (reason: string) => void;
   isPending: boolean;
 }
 
-const RejectModal = ({ open, onClose, onSubmit, isPending }: RejectModalProps) => {
+const RejectModal = ({ open, onClose, onSubmit, isPending }: IRejectModalProps) => {
   const [reason, setReason] = useState("");
 
   const handleSubmit = () => {
@@ -371,15 +385,17 @@ const ProposalsPage = () => {
   const items      = useMemo(() => state.proposals?.items ?? [], [state.proposals]);
   const totalCount = state.proposals?.totalCount ?? 0;
 
-  const handleCreate = async (payload: CreateProposalPayload) => {
+  const refresh = () => getProposals({ pageNumber, pageSize, status: statusFilter });
+
+  const handleCreate = async (payload: ICreateProposalPayload) => {
     await createProposal(payload);
     setShowCreate(false);
-    getProposals({ pageNumber, pageSize, status: statusFilter });
+    refresh();
   };
 
-  const handleDelete  = async (id: string) => { await deleteProposal(id);  getProposals({ pageNumber, pageSize, status: statusFilter }); };
-  const handleSubmit  = async (id: string) => { await submitProposal(id);  getProposals({ pageNumber, pageSize, status: statusFilter }); };
-  const handleApprove = async (id: string) => { await approveProposal(id); getProposals({ pageNumber, pageSize, status: statusFilter }); };
+  const handleDelete  = async (id: string) => { await deleteProposal(id);  refresh(); };
+  const handleSubmit  = async (id: string) => { await submitProposal(id);  refresh(); };
+  const handleApprove = async (id: string) => { await approveProposal(id); refresh(); };
 
   const handleRejectClick  = (id: string) => { setRejectTarget(id); setShowReject(true); };
   const handleRejectSubmit = async (reason: string) => {
@@ -387,10 +403,10 @@ const ProposalsPage = () => {
     await rejectProposal(rejectTarget, { reason });
     setShowReject(false);
     setRejectTarget(null);
-    getProposals({ pageNumber, pageSize, status: statusFilter });
+    refresh();
   };
 
-  const columns: ColumnsType<Proposal> = [
+  const columns: ColumnsType<IProposal> = [
     {
       title: "Title",
       dataIndex: "title",
@@ -426,7 +442,7 @@ const ProposalsPage = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: unknown, record: Proposal) => (
+      render: (_: unknown, record: IProposal) => (
         <Flex gap={6} justify="flex-end" wrap="wrap">
           {record.status === 1 && (
             <>

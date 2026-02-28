@@ -1,5 +1,5 @@
 import { createAction } from "redux-actions";
-import type { IProposalsStateContext, Proposal, ProposalPagedResult, ProposalLineItem } from "./context";
+import type { IProposalsStateContext, IProposal, IProposalPagedResult, IProposalLineItem } from "./context";
 
 export enum ProposalsActionEnums {
   getProposalsPending = "GET_PROPOSALS_PENDING",
@@ -55,7 +55,7 @@ const error = (type: string) =>
 
 // ── Get All ───────────────────────────────────────────────────────────────────
 export const getProposalsPending = pending(ProposalsActionEnums.getProposalsPending);
-export const getProposalsSuccess = createAction<IProposalsStateContext, ProposalPagedResult>(
+export const getProposalsSuccess = createAction<IProposalsStateContext, IProposalPagedResult>(
   ProposalsActionEnums.getProposalsSuccess,
   (proposals) => ({ isPending: false, isSuccess: true, isError: false, proposals })
 );
@@ -63,7 +63,7 @@ export const getProposalsError = error(ProposalsActionEnums.getProposalsError);
 
 // ── Get Single ────────────────────────────────────────────────────────────────
 export const getProposalPending = pending(ProposalsActionEnums.getProposalPending);
-export const getProposalSuccess = createAction<IProposalsStateContext, Proposal>(
+export const getProposalSuccess = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.getProposalSuccess,
   (proposal) => ({ isPending: false, isSuccess: true, isError: false, proposal })
 );
@@ -71,7 +71,7 @@ export const getProposalError = error(ProposalsActionEnums.getProposalError);
 
 // ── Create ────────────────────────────────────────────────────────────────────
 export const createProposalPending = pending(ProposalsActionEnums.createProposalPending);
-export const createProposalSuccess = createAction<IProposalsStateContext, Proposal>(
+export const createProposalSuccess = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.createProposalSuccess,
   (createdProposal) => ({ isPending: false, isSuccess: true, isError: false, createdProposal })
 );
@@ -79,7 +79,7 @@ export const createProposalError = error(ProposalsActionEnums.createProposalErro
 
 // ── Update ────────────────────────────────────────────────────────────────────
 export const updateProposalPending = pending(ProposalsActionEnums.updateProposalPending);
-export const updateProposalSuccess = createAction<IProposalsStateContext, Proposal>(
+export const updateProposalSuccess = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.updateProposalSuccess,
   (updatedProposal) => ({ isPending: false, isSuccess: true, isError: false, updatedProposal })
 );
@@ -95,14 +95,14 @@ export const deleteProposalError = error(ProposalsActionEnums.deleteProposalErro
 
 // ── Line Items ────────────────────────────────────────────────────────────────
 export const addLineItemPending    = pending(ProposalsActionEnums.addLineItemPending);
-export const addLineItemSuccess    = createAction<IProposalsStateContext, ProposalLineItem>(
+export const addLineItemSuccess    = createAction<IProposalsStateContext, IProposalLineItem>(
   ProposalsActionEnums.addLineItemSuccess,
   (lineItem) => ({ isPending: false, isSuccess: true, isError: false })
 );
 export const addLineItemError      = error(ProposalsActionEnums.addLineItemError);
 
 export const updateLineItemPending = pending(ProposalsActionEnums.updateLineItemPending);
-export const updateLineItemSuccess = createAction<IProposalsStateContext, ProposalLineItem>(
+export const updateLineItemSuccess = createAction<IProposalsStateContext, IProposalLineItem>(
   ProposalsActionEnums.updateLineItemSuccess,
   (lineItem) => ({ isPending: false, isSuccess: true, isError: false })
 );
@@ -117,21 +117,21 @@ export const deleteLineItemError   = error(ProposalsActionEnums.deleteLineItemEr
 
 // ── Status Changes ────────────────────────────────────────────────────────────
 export const submitProposalPending  = pending(ProposalsActionEnums.submitProposalPending);
-export const submitProposalSuccess  = createAction<IProposalsStateContext, Proposal>(
+export const submitProposalSuccess  = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.submitProposalSuccess,
   (proposal) => ({ isPending: false, isSuccess: true, isError: false, proposal })
 );
 export const submitProposalError    = error(ProposalsActionEnums.submitProposalError);
 
 export const approveProposalPending = pending(ProposalsActionEnums.approveProposalPending);
-export const approveProposalSuccess = createAction<IProposalsStateContext, Proposal>(
+export const approveProposalSuccess = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.approveProposalSuccess,
   (proposal) => ({ isPending: false, isSuccess: true, isError: false, proposal })
 );
 export const approveProposalError   = error(ProposalsActionEnums.approveProposalError);
 
 export const rejectProposalPending  = pending(ProposalsActionEnums.rejectProposalPending);
-export const rejectProposalSuccess  = createAction<IProposalsStateContext, Proposal>(
+export const rejectProposalSuccess  = createAction<IProposalsStateContext, IProposal>(
   ProposalsActionEnums.rejectProposalSuccess,
   (proposal) => ({ isPending: false, isSuccess: true, isError: false, proposal })
 );

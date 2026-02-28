@@ -1,6 +1,6 @@
 import { createContext } from "react";
 
-export interface ProposalLineItem {
+export interface IProposalLineItem {
   id: string;
   productServiceName: string;
   description?: string;
@@ -11,7 +11,7 @@ export interface ProposalLineItem {
   lineTotal?: number;
 }
 
-export interface Proposal {
+export interface IProposal {
   id: string;
   opportunityId?: string;
   opportunityTitle?: string;
@@ -27,19 +27,19 @@ export interface Proposal {
   totalDiscount?: number;
   totalTax?: number;
   totalAmount?: number;
-  lineItems?: ProposalLineItem[];
+  lineItems?: IProposalLineItem[];
   createdAt?: string;
 }
 
-export interface ProposalPagedResult {
-  items: Proposal[];
+export interface IProposalPagedResult {
+  items: IProposal[];
   totalCount: number;
   totalPages: number;
   pageNumber: number;
   pageSize: number;
 }
 
-export interface ProposalsQuery {
+export interface IProposalsQuery {
   clientId?: string;
   opportunityId?: string;
   status?: number;
@@ -47,7 +47,7 @@ export interface ProposalsQuery {
   pageSize?: number;
 }
 
-export interface CreateLineItemPayload {
+export interface ICreateLineItemPayload {
   productServiceName: string;
   description?: string;
   quantity: number;
@@ -56,23 +56,23 @@ export interface CreateLineItemPayload {
   taxRate: number;
 }
 
-export interface CreateProposalPayload {
+export interface ICreateProposalPayload {
   opportunityId: string;       // ← replace clientId with this
   title: string;
   description?: string;
   currency?: string;
   validUntil?: string;
-  lineItems: CreateLineItemPayload[];
+  lineItems: ICreateLineItemPayload[];
 }
 
-export interface UpdateProposalPayload {
+export interface IUpdateProposalPayload {
   title?: string;
   description?: string;
   currency?: string;
   validUntil?: string;
 }
 
-export interface RejectProposalPayload {
+export interface IRejectProposalPayload {
   reason: string;
 }
 
@@ -80,25 +80,25 @@ export interface IProposalsStateContext {
   isPending: boolean;
   isSuccess: boolean;
   isError: boolean;
-  proposals?: ProposalPagedResult;
-  proposal?: Proposal;
-  createdProposal?: Proposal;
-  updatedProposal?: Proposal;
+  proposals?: IProposalPagedResult;
+  proposal?: IProposal;
+  createdProposal?: IProposal;
+  updatedProposal?: IProposal;
   deletedProposalId?: string;
 }
 
 export interface IProposalsActionContext {
-  getProposals: (query?: ProposalsQuery) => void;
+  getProposals: (query?: IProposalsQuery) => void;
   getProposal: (id: string) => void;
-  createProposal: (payload: CreateProposalPayload) => void;
-  updateProposal: (id: string, payload: UpdateProposalPayload) => void;
+  createProposal: (payload: ICreateProposalPayload) => void;
+  updateProposal: (id: string, payload: IUpdateProposalPayload) => void;
   deleteProposal: (id: string) => void;
-  addLineItem: (proposalId: string, payload: CreateLineItemPayload) => void;
-  updateLineItem: (proposalId: string, lineItemId: string, payload: CreateLineItemPayload) => void;
+  addLineItem: (proposalId: string, payload: ICreateLineItemPayload) => void;
+  updateLineItem: (proposalId: string, lineItemId: string, payload: ICreateLineItemPayload) => void;
   deleteLineItem: (proposalId: string, lineItemId: string) => void;
   submitProposal: (id: string) => void;
   approveProposal: (id: string) => void;
-  rejectProposal: (id: string, payload: RejectProposalPayload) => void;
+  rejectProposal: (id: string, payload: IRejectProposalPayload) => void;
 }
 
 export const INITIAL_STATE: IProposalsStateContext = {
