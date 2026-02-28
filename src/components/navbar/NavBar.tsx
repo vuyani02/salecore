@@ -13,6 +13,7 @@ import {
   CalendarOutlined,
   FileOutlined,
   FolderOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { useNavBarStyles } from "./styles/navBarStyle";
 
@@ -47,7 +48,7 @@ export default function NavBar() {
         </Title>
       </div>
 
-      {/* Nav items */}
+      {/* Main nav */}
       <nav className={styles.nav}>
         {NAV_ITEMS.map(({ href, label, icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
@@ -63,6 +64,17 @@ export default function NavBar() {
           );
         })}
       </nav>
+
+      {/* Settings — pinned to bottom */}
+      <div className={styles.navBottom}>
+        <Link
+          href="/settings"
+          className={cx(styles.navItem, pathname.startsWith("/settings") && styles.navItemActive)}
+        >
+          <span className={styles.navIcon}><SettingOutlined /></span>
+          <span className={styles.navLabel}>Settings</span>
+        </Link>
+      </div>
 
     </Sider>
   );

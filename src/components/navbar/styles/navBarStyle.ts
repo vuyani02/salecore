@@ -86,4 +86,9 @@ export const useNavBarStyles = createStyles(({ css }) => ({
     flex: 1;
     line-height: 1;
   `,
+  navBottom: css`
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(112, 112, 112, 0.2);
+`,
 }));

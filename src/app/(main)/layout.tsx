@@ -51,7 +51,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </Content>
           </DocumentsProvider>
         </NotesProvider>
-
         <Footer className={styles.footer}>
           <Text className={styles.footerText}>Salecore © 2025</Text>
         </Footer>
