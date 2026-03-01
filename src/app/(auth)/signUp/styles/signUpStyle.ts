@@ -8,15 +8,15 @@ export const useSignUpStyles = createStyles(({ css }) => ({
     background: rgba(112, 112, 112, 0.6);
     width: 1100px;
     max-width: 70%;
-    height: calc(100vh - 7rem);
+    height: calc(100vh - 8.5rem);
     display: flex;
     align-items: stretch;
     justify-content: space-btween !important;
     gap: 10rem;
-    padding: 2rem 3rem;
+    padding: 3rem;
     border: 1px solid #707070;
     backdrop-filter: blur(100px);
-    border-radius: 25px;
+    border-radius: 15px;
     box-sizing: border-box;
 
     @media (max-width: 768px) {

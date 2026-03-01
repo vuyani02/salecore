@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Form, Input, Button, Typography, Select, message } from "antd";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +31,14 @@ const SCENARIOS: { key: Scenario; label: string; subtitle: string }[] = [
 ];
 
 export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpContent />
+    </Suspense>
+  );
+}
+
+function SignUpContent() {
   const { styles, cx } = useSignUpStyles();
   const router         = useRouter();
   const searchParams   = useSearchParams();
