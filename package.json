@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@emailjs/browser": "^4.4.1",
     "@types/redux-actions": "^2.6.5",
     "antd": "^6.3.1",
     "antd-style": "^4.1.0",
