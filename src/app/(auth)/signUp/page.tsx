@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Input, Button, Typography, Select, message } from "antd";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSignUpStyles } from "./styles/signUpStyle";
 import { getAxiosInstance } from "@/util/axiosInstance";
 import type { RegisterPayload, AuthResponse } from "../../../types/auth";
@@ -25,17 +25,36 @@ const SCENARIOS: { key: Scenario; label: string; subtitle: string }[] = [
   },
   {
     key:      "demo",
-    label:    "Demo Access",
-    subtitle: "Explore the system on the shared demo workspace",
+    label:    "Guest Access",
+    subtitle: "Explore the platform on a shared workspace",
   },
 ];
 
 export default function SignUpPage() {
   const { styles, cx } = useSignUpStyles();
   const router         = useRouter();
-  const [loading,   setLoading]  = useState(false);
-  const [scenario,  setScenario] = useState<Scenario>("new");
+  const searchParams   = useSearchParams();
+
+  const [loading,  setLoading]  = useState(false);
+  const [scenario, setScenario] = useState<Scenario>("new");
   const [form] = Form.useForm();
+
+  // ── Read invite params — lock scenario to "join" and pre-fill fields ──────
+  const inviteTenantId = searchParams.get("tenantId");
+  const inviteRole     = searchParams.get("role");
+  const inviteEmail    = searchParams.get("email");
+  const isInvite       = !!inviteTenantId;
+
+  useEffect(() => {
+    if (isInvite) {
+      setScenario("join");
+      form.setFieldsValue({
+        tenantId: inviteTenantId,
+        ...(inviteRole  && { role:  inviteRole  }),
+        ...(inviteEmail && { email: inviteEmail }),
+      });
+    }
+  }, []);
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -61,6 +80,8 @@ export default function SignUpPage() {
       if (scenario === "demo" && values.role)
         payload.role = values.role;
 
+      console.log("📦 Register payload:", JSON.stringify(payload, null, 2));
+
       const api = getAxiosInstance();
       const res = await api.post<AuthResponse>("/api/auth/register", payload);
       const auth = res.data;
@@ -72,11 +93,16 @@ export default function SignUpPage() {
       message.success("Account created successfully");
       router.push("/dashboard");
     } catch (err: any) {
-      message.error(
-        err?.response?.data?.title  ||
-        err?.response?.data?.detail ||
-        "Sign up failed"
-      );
+      console.error("❌ Register error:", JSON.stringify(err?.response?.data, null, 2));
+      const errData = err?.response?.data;
+      const errMsg =
+        errData?.errors
+          ? Object.values(errData.errors).flat().join(", ")
+          : errData?.title  ||
+            errData?.detail ||
+            errData?.message ||
+            "Sign up failed";
+      message.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -92,7 +118,7 @@ export default function SignUpPage() {
   return (
     <div className={styles.container}>
 
-      {/* ── Left panel ─────────────────────────────────────────────────────── */}
+      {/* ── Left panel ───────────────────────────────────────────────────── */}
       <div className={styles.leftSection}>
         <div className={styles.welcomeTitle}>Welcome to Salecore.</div>
         <Text className={styles.welcometext}>
@@ -100,14 +126,18 @@ export default function SignUpPage() {
         </Text>
 
         <div className={styles.scenarioSection}>
-          <Text className={styles.scenarioLabel}>Choose sign-up type</Text>
+          <Text className={styles.scenarioLabel}>Account type</Text>
           <div className={styles.scenarioList}>
             {SCENARIOS.map(({ key, label, subtitle }) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => handleScenarioChange(key)}
-                className={cx(styles.scenarioBtn, scenario === key && styles.scenarioBtnActive)}
+                disabled={isInvite}
+                onClick={() => !isInvite && handleScenarioChange(key)}
+                className={cx(
+                  styles.scenarioBtn,
+                  scenario === key && styles.scenarioBtnActive
+                )}
               >
                 <span className={cx(styles.scenarioBtnLabel, scenario === key && styles.scenarioBtnLabelActive)}>
                   {label}
@@ -119,19 +149,42 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      {/* ── Form panel ─────────────────────────────────────────────────────── */}
+      {/* ── Right panel — form ────────────────────────────────────────────── */}
       <div className={styles.formWrapper}>
-        <Title level={3} className={styles.formTitle}>{active.label}</Title>
-        <Text className={styles.formSubtitle}>{active.subtitle}</Text>
+        <Title level={3} className={styles.formTitle}>
+          {isInvite ? "You've Been Invited" : active.label}
+        </Title>
+        <Text className={styles.formSubtitle}>
+          {isInvite
+            ? "Complete your profile to activate your account"
+            : active.subtitle}
+        </Text>
+
+        {/* Invite banner */}
+        {isInvite && (
+          <div className={styles.inviteBanner}>
+            <Text className={styles.inviteBannerText}>
+              You've been invited to join an organisation on{" "}
+              <Text className={styles.inviteBannerHighlight}>Salecore</Text>.
+              Your workspace and role have been pre-configured — just fill in your details below.
+            </Text>
+          </div>
+        )}
 
         <Form form={form} layout="vertical" onFinish={onFinish}>
 
           {/* Common fields */}
-          <Form.Item name="firstName" rules={[{ required: true, message: "First name is required" }]}>
+          <Form.Item
+            name="firstName"
+            rules={[{ required: true, message: "First name is required" }]}
+          >
             <Input placeholder="First Name" className={styles.input} />
           </Form.Item>
 
-          <Form.Item name="lastName" rules={[{ required: true, message: "Last name is required" }]}>
+          <Form.Item
+            name="lastName"
+            rules={[{ required: true, message: "Last name is required" }]}
+          >
             <Input placeholder="Last Name" className={styles.input} />
           </Form.Item>
 
@@ -142,7 +195,11 @@ export default function SignUpPage() {
               { type: "email", message: "Enter a valid email" },
             ]}
           >
-            <Input placeholder="Email" className={styles.input} />
+            <Input
+              placeholder="Email"
+              className={cx(styles.input, !!inviteEmail && styles.inputLocked)}
+              disabled={!!inviteEmail}
+            />
           </Form.Item>
 
           <Form.Item
@@ -169,23 +226,34 @@ export default function SignUpPage() {
             </Form.Item>
           )}
 
-          {/* Scenario B — Join Organisation */}
+          {/* Scenario B — Join Organisation (manual or via invite) */}
           {scenario === "join" && (
             <>
-              <Form.Item
-                name="tenantId"
-                rules={[{ required: true, message: "Tenant ID is required" }]}
-                extra={<Text className={styles.fieldExtra}>Ask your organisation Admin for the Tenant ID</Text>}
-              >
-                <Input placeholder="Tenant ID" className={styles.input} />
-              </Form.Item>
+              {isInvite ? (
+                // Hidden field — value already set via form.setFieldsValue in useEffect
+                <Form.Item name="tenantId" hidden>
+                  <Input />
+                </Form.Item>
+              ) : (
+                <Form.Item
+                  name="tenantId"
+                  rules={[{ required: true, message: "Tenant ID is required" }]}
+                  extra={<Text className={styles.fieldExtra}>Ask your organisation Admin for the Tenant ID</Text>}
+                >
+                  <Input placeholder="Tenant ID" className={styles.input} />
+                </Form.Item>
+              )}
 
               <Form.Item
                 name="role"
                 rules={[{ required: true, message: "Please select a role" }]}
                 extra={<Text className={styles.fieldExtra}>You cannot join as Admin</Text>}
               >
-                <Select placeholder="Select Role" className={styles.select} allowClear>
+                <Select
+                  placeholder="Select Role"
+                  className={cx(styles.select, !!inviteRole && styles.selectLocked)}
+                  disabled={!!inviteRole}
+                >
                   <Option value="SalesRep">Sales Rep</Option>
                   <Option value="SalesManager">Sales Manager</Option>
                   <Option value="BusinessDevelopmentManager">Business Development Manager</Option>
@@ -194,14 +262,14 @@ export default function SignUpPage() {
             </>
           )}
 
-          {/* Scenario C — Demo Workspace */}
+          {/* Scenario C — Guest Access */}
           {scenario === "demo" && (
             <>
               <div className={styles.demoNotice}>
                 <Text className={styles.demoNoticeText}>
                   You'll be added to the{" "}
-                  <Text className={styles.demoNoticeHighlight}>shared demo workspace</Text>.
-                  All data here is visible to other demo users.
+                  <Text className={styles.demoNoticeHighlight}>shared guest workspace</Text>.
+                  {" "}Data entered here is visible to all guest users.
                 </Text>
               </div>
 
@@ -221,9 +289,9 @@ export default function SignUpPage() {
             className={styles.button}
             loading={loading}
           >
-            {scenario === "new"  && "Create Organisation & Sign Up"}
-            {scenario === "join" && "Join Organisation"}
-            {scenario === "demo" && "Access Demo Workspace"}
+            {scenario === "new"  && "Create Organisation"}
+            {scenario === "join" && (isInvite ? "Activate Account" : "Join Organisation")}
+            {scenario === "demo" && "Access Guest Workspace"}
           </Button>
 
         </Form>

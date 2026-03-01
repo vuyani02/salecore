@@ -18,27 +18,29 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const payload: LoginPayload = {
-        email: String(values.email || "").trim(),
+        email:    String(values.email || "").trim(),
         password: String(values.password || ""),
       };
 
-      const api = getAxiosInstance();
-      const res = await api.post<AuthResponse>("/api/auth/login", payload);
+      const api  = getAxiosInstance();
+      const res  = await api.post<AuthResponse>("/api/auth/login", payload);
       const auth = res.data;
 
       localStorage.setItem("auth_token", auth.token);
-      localStorage.setItem("user_role", auth.roles?.[0] || "");
+      localStorage.setItem("user_role",  auth.roles?.[0] || "");
       localStorage.setItem("user_email", auth.email || "");
-      localStorage.setItem("user_id", auth.userId || "");
-      localStorage.setItem("tenant_id", auth.tenantId || "");
+      localStorage.setItem("user_id",    auth.userId || "");
+      localStorage.setItem("tenant_id",  auth.tenantId || "");
+      localStorage.setItem("first_name", auth.firstName || "");
+      localStorage.setItem("last_name",  auth.lastName || "");
 
       message.success("Logged in");
       router.push("/dashboard");
     } catch (e: any) {
       const msg =
-        e?.response?.data?.title ||
+        e?.response?.data?.title  ||
         e?.response?.data?.detail ||
-        e?.message ||
+        e?.message                ||
         "Login failed";
       message.error(msg);
     } finally {
@@ -89,7 +91,7 @@ export default function LoginPage() {
         </Form>
 
         <Link href="/signUp" className={styles.signup}>
-          Don’t have an account? Sign up
+          Don't have an account? Sign up
         </Link>
       </div>
     </div>

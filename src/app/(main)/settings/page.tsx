@@ -10,15 +10,19 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import emailjs from "@emailjs/browser";
 import { useSettingsStyles } from "./styeles/Settingsstyles";
+import { getAxiosInstance } from "@/util/axiosInstance";
 
 dayjs.extend(relativeTime);
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const FROM_EMAIL = "onboarding@resend.dev";
-const APP_URL    = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const EMAILJS_SERVICE_ID  = "service_e0qgyuw";
+const EMAILJS_TEMPLATE_ID = "g71u691";
+const EMAILJS_PUBLIC_KEY  = "fUX4R5Wp_hfwEgKeW";
+const APP_URL             = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ISentInvite {
@@ -40,13 +44,63 @@ const ROLE_LABELS: Record<string, string> = {
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
 const ProfileTab = ({ styles }: { styles: any }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied,  setCopied]  = useState(false);
+  const [profile, setProfile] = useState<any>(null);
 
-  const firstName = localStorage.getItem("first_name") ?? "—";
-  const lastName  = localStorage.getItem("last_name")  ?? "—";
-  const email     = localStorage.getItem("user_email") ?? "—";
-  const role      = localStorage.getItem("user_role")  ?? "—";
-  const tenantId  = localStorage.getItem("tenant_id")  ?? "—";
+  const instance = getAxiosInstance();
+
+  useEffect(() => {
+    instance.get("/api/auth/me")
+      .then((res) => {
+        const data   = res.data;
+        const claims = data.claims ?? [];
+
+        const getClaim = (type: string) =>
+          claims.find((c: any) => c.type === type)?.value ?? "";
+
+        const firstName = getClaim("firstName");
+        const lastName  = getClaim("lastName");
+        const tenantId  = getClaim("tenantId");
+
+        setProfile({
+          firstName,
+          lastName,
+          email:    data.email,
+          role:     data.roles?.[0] ?? "",
+          tenantId,
+        });
+
+        // Sync to localStorage
+        localStorage.setItem("first_name", firstName);
+        localStorage.setItem("last_name",  lastName);
+        localStorage.setItem("user_email", data.email   || "");
+        localStorage.setItem("user_role",  data.roles?.[0] || "");
+        localStorage.setItem("tenant_id",  tenantId);
+      })
+      .catch(() => {
+        setProfile({
+          firstName: localStorage.getItem("first_name") ?? "",
+          lastName:  localStorage.getItem("last_name")  ?? "",
+          email:     localStorage.getItem("user_email") ?? "—",
+          role:      localStorage.getItem("user_role")  ?? "—",
+          tenantId:  localStorage.getItem("tenant_id")  ?? "—",
+        });
+      });
+  }, []);
+
+  const firstName = profile?.firstName ?? "";
+  const lastName  = profile?.lastName  ?? "";
+  const email     = profile?.email     ?? "—";
+  const role      = profile?.role      ?? localStorage.getItem("user_role") ?? "—";
+  const tenantId  = profile?.tenantId  ?? localStorage.getItem("tenant_id") ?? "—";
+
+  const initials = firstName || lastName
+    ? `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase()
+    : "?";
+
+  const displayName = firstName || lastName
+    ? `${firstName} ${lastName}`.trim()
+    : "—";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(tenantId);
@@ -62,11 +116,11 @@ const ProfileTab = ({ styles }: { styles: any }) => {
       <Card className={styles.card}>
         <Flex align="center" gap={16} style={{ padding: "4px 0" }}>
           <div className={styles.avatarWrap}>
-            {getInitials(firstName, lastName)}
+            {initials}
           </div>
           <Flex vertical gap={4}>
             <Title level={4} className={styles.profileName}>
-              {firstName} {lastName}
+              {displayName}
             </Title>
             <Tag
               style={{
@@ -200,27 +254,25 @@ const InviteTab = ({ styles }: { styles: any }) => {
     `;
 
     try {
-      const res = await fetch("/api/send-invite", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from:    FROM_EMAIL,
-          to:      [email],
-          subject: "You've been invited to join Salecore",
-          html,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err?.message ?? "Failed to send");
-      }
+      const result = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          to_email:     email,
+          html_content: html,
+          name:         "Salecore",
+          email:        "noreplysalecore@gmail.com",
+        },
+        EMAILJS_PUBLIC_KEY
+      );
+      console.log("✅ EmailJS result:", result);
 
       message.success(`Invite sent to ${email}`);
       setSentList((prev) => [{ email, role, sentAt: new Date().toISOString() }, ...prev]);
       form.resetFields();
     } catch (err: any) {
-      message.error(err.message ?? "Failed to send invite");
+      console.error("❌ EmailJS error:", err?.status, err?.text, JSON.stringify(err));
+      message.error(err?.text ?? err?.message ?? "Failed to send invite");
     } finally {
       setSending(false);
     }

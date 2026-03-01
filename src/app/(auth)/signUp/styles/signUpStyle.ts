@@ -2,37 +2,44 @@
 import { createStyles } from "antd-style";
 
 export const useSignUpStyles = createStyles(({ css }) => ({
+
+  // ── Card container ────────────────────────────────────────────────────────
   container: css`
     background: rgba(112, 112, 112, 0.6);
-    width: 900px;
-    max-width: 95%;
+    width: 1100px;
+    max-width: 70%;
+    height: calc(100vh - 7rem);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4rem;
-    padding: 3rem;
+    align-items: stretch;
+    justify-content: space-btween !important;
+    gap: 10rem;
+    padding: 2rem 3rem;
     border: 1px solid #707070;
     backdrop-filter: blur(100px);
-    border-radius: 8px;
-    margin-top: 2rem;
+    border-radius: 25px;
+    box-sizing: border-box;
 
     @media (max-width: 768px) {
       flex-direction: column;
       height: auto;
-      padding: 2rem;
-      gap: 2rem;
+      padding: 1.5rem;
+      gap: 1.5rem;
     }
   `,
 
+  // ── Left panel ────────────────────────────────────────────────────────────
   leftSection: css`
-    flex: 1;
+    flex: 0 0 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
     color: #ffffff;
-    font-size: 1.1rem;
-    line-height: 1.6;
+    overflow: hidden;
 
     @media (max-width: 768px) {
-      text-align: center;
-      font-size: 1rem;
+      flex: none;
+      width: 100%;
     }
   `,
 
@@ -40,6 +47,7 @@ export const useSignUpStyles = createStyles(({ css }) => ({
     font-family: 'Goblin One', sans-serif;
     font-size: 2rem;
     margin-bottom: 1rem;
+    color: #ffffff;
 
     @media (max-width: 768px) {
       font-size: 1.5rem;
@@ -47,31 +55,30 @@ export const useSignUpStyles = createStyles(({ css }) => ({
   `,
 
   welcometext: css`
-    font-size: 1rem;
-    color: #fff;
-
-    @media (max-width: 768px) {
-      font-size: 0.9rem;
-    }
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
   `,
 
   scenarioSection: css`
     margin-top: 2.5rem;
+    width: 100%;
   `,
 
   scenarioLabel: css`
-    color: rgba(255, 255, 255, 0.5) !important;
-    font-size: 11px !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-size: 10px !important;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     font-weight: 700 !important;
   `,
 
   scenarioList: css`
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin-top: 12px;
+    width: 100%;
   `,
 
   scenarioBtn: css`
@@ -96,7 +103,7 @@ export const useSignUpStyles = createStyles(({ css }) => ({
   `,
 
   scenarioBtnLabel: css`
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.55);
     font-weight: 700;
     font-size: 13px;
     display: block;
@@ -107,18 +114,41 @@ export const useSignUpStyles = createStyles(({ css }) => ({
   `,
 
   scenarioBtnSubtitle: css`
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.3);
     font-size: 11px;
-    margin-top: 2px;
+    margin-top: 3px;
     display: block;
+    line-height: 1.4;
   `,
 
+  // ── Right panel — form ────────────────────────────────────────────────────
   formWrapper: css`
     flex: 1;
+    border: 1px solid rgba(112, 112, 112, 0.5);
+    border-radius: 10px;
     padding: 2rem;
-    border: 1px solid #707070;
-    background: transparent;
-    border-radius: 8px;
+    overflow-y: auto;
+    max-width: 30rem;
+
+    scrollbar-width: thin;
+    scrollbar-color: rgba(112, 112, 112, 0.5) transparent;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(112, 112, 112, 0.5);
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(112, 112, 112, 0.8);
+    }
 
     @media (max-width: 768px) {
       width: 100%;
@@ -132,10 +162,6 @@ export const useSignUpStyles = createStyles(({ css }) => ({
     text-align: center;
     font-weight: 600;
     font-family: 'Goblin One', sans-serif;
-
-    @media (max-width: 768px) {
-      font-size: 1.5rem;
-    }
   `,
 
   formSubtitle: css`
@@ -165,14 +191,23 @@ export const useSignUpStyles = createStyles(({ css }) => ({
       box-shadow: none;
       background-color: #707070;
     }
+  `,
 
-    @media (max-width: 768px) {
-      height: 2.2rem;
+  inputLocked: css`
+    background-color: rgba(112, 112, 112, 0.4) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    cursor: not-allowed !important;
+
+    &:hover,
+    &:focus {
+      background-color: rgba(112, 112, 112, 0.4) !important;
+      box-shadow: none !important;
     }
   `,
 
   select: css`
     margin-top: 1rem;
+    width: 100%;
 
     .ant-select-selector {
       background-color: #707070 !important;
@@ -192,9 +227,33 @@ export const useSignUpStyles = createStyles(({ css }) => ({
     }
   `,
 
+  selectLocked: css`
+    opacity: 0.5;
+    pointer-events: none;
+  `,
+
   fieldExtra: css`
     color: rgba(255, 255, 255, 0.3) !important;
     font-size: 11px !important;
+  `,
+
+  inviteBanner: css`
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(112, 112, 112, 0.35);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 1.5rem;
+  `,
+
+  inviteBannerText: css`
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+  `,
+
+  inviteBannerHighlight: css`
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 700 !important;
   `,
 
   demoNotice: css`
@@ -212,7 +271,7 @@ export const useSignUpStyles = createStyles(({ css }) => ({
   `,
 
   demoNoticeHighlight: css`
-    color: rgba(255, 255, 255, 0.75) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
     font-weight: 700 !important;
   `,
 
@@ -239,10 +298,6 @@ export const useSignUpStyles = createStyles(({ css }) => ({
 
     &:hover {
       opacity: 0.85;
-    }
-
-    @media (max-width: 768px) {
-      font-size: 0.9rem;
     }
   `,
 }));
