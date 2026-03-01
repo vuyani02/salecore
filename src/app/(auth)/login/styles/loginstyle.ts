@@ -6,7 +6,7 @@ export const useLoginStyles = createStyles(({ css }) => ({
     background: rgba(112, 112, 112, 0.6);
     width: 1100px;
     max-width: 70%;
-    height: calc(100vh - 7rem);
+    height: calc(100vh - 8.5rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -14,7 +14,7 @@ export const useLoginStyles = createStyles(({ css }) => ({
     padding: 2rem 3rem;
     border: 1px solid #707070;
     backdrop-filter: blur(100px);
-    border-radius: 25px;
+    border-radius: 15px;
     box-sizing: border-box;
 
     @media (max-width: 768px) {

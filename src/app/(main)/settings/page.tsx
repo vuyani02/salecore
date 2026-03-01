@@ -6,13 +6,14 @@ import {
   Row, Select, Tag, Tooltip, Typography, message,
 } from "antd";
 import {
-  CopyOutlined, MailOutlined, SendOutlined, CheckOutlined,
+  CopyOutlined, MailOutlined, SendOutlined, CheckOutlined, LogoutOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import emailjs from "@emailjs/browser";
 import { useSettingsStyles } from "./styeles/Settingsstyles";
 import { getAxiosInstance } from "@/util/axiosInstance";
+import { useRouter } from "next/navigation";
 
 dayjs.extend(relativeTime);
 
@@ -44,12 +45,14 @@ const ROLE_LABELS: Record<string, string> = {
 
 // ── Profile Tab ───────────────────────────────────────────────────────────────
 const ProfileTab = ({ styles }: { styles: any }) => {
-  const [copied,  setCopied]  = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+  const [copied,   setCopied]   = useState(false);
+  const [profile,  setProfile]  = useState<any>(null);
+  const [mounted,  setMounted]  = useState(false);
 
   const instance = getAxiosInstance();
 
   useEffect(() => {
+    setMounted(true);
     instance.get("/api/auth/me")
       .then((res) => {
         const data   = res.data;
@@ -87,6 +90,8 @@ const ProfileTab = ({ styles }: { styles: any }) => {
         });
       });
   }, []);
+
+  if (!mounted) return null;
 
   const firstName = profile?.firstName ?? "";
   const lastName  = profile?.lastName  ?? "";
@@ -365,12 +370,29 @@ type Tab = "profile" | "invite";
 const SettingsPage = () => {
   const { styles, cx } = useSettingsStyles();
   const [activeTab, setActiveTab] = useState<Tab>("profile");
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
 
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
       {/* Header */}
-      <Title level={3} className={styles.title}>Settings</Title>
+      <Flex justify="space-between" align="center">
+        <Title level={3} className={styles.title}>Settings</Title>
+        <Button
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          danger
+          type="primary"
+          style={{ fontWeight: 600, boxShadow: "none" }}
+        >
+          Log Out
+        </Button>
+      </Flex>
 
       {/* Sub-nav tabs */}
       <div className={styles.tabBar}>
