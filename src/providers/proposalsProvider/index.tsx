@@ -55,7 +55,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(createProposalPending());
     await instance
       .post<IProposal>("/api/proposals", payload)
-      .then((res) => { dispatch(createProposalSuccess(res.data)); message.success("IProposal created"); })
+      .then((res) => { dispatch(createProposalSuccess(res.data)); message.success("Proposal created"); })
       .catch(() => { dispatch(createProposalError()); message.error("Failed to create proposal"); });
   };
 
@@ -63,7 +63,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(updateProposalPending());
     await instance
       .put<IProposal>(`/api/proposals/${id}`, payload)
-      .then((res) => { dispatch(updateProposalSuccess(res.data)); message.success("IProposal updated"); })
+      .then((res) => { dispatch(updateProposalSuccess(res.data)); message.success("Proposal updated"); })
       .catch(() => { dispatch(updateProposalError()); message.error("Failed to update proposal"); });
   };
 
@@ -71,7 +71,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(deleteProposalPending());
     await instance
       .delete(`/api/proposals/${id}`)
-      .then(() => { dispatch(deleteProposalSuccess(id)); message.success("IProposal deleted"); })
+      .then(() => { dispatch(deleteProposalSuccess(id)); message.success("Proposal deleted"); })
       .catch(() => { dispatch(deleteProposalError()); message.error("Failed to delete proposal"); });
   };
 
@@ -103,7 +103,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(submitProposalPending());
     await instance
       .put<IProposal>(`/api/proposals/${id}/submit`)
-      .then((res) => { dispatch(submitProposalSuccess(res.data)); message.success("IProposal submitted"); })
+      .then((res) => { dispatch(submitProposalSuccess(res.data)); message.success("Proposal submitted"); })
       .catch(() => { dispatch(submitProposalError()); message.error("Failed to submit proposal"); });
   };
 
@@ -111,7 +111,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(approveProposalPending());
     await instance
       .put<IProposal>(`/api/proposals/${id}/approve`)
-      .then((res) => { dispatch(approveProposalSuccess(res.data)); message.success("IProposal approved"); })
+      .then((res) => { dispatch(approveProposalSuccess(res.data)); message.success("Proposal approved"); })
       .catch(() => { dispatch(approveProposalError()); message.error("Failed to approve proposal"); });
   };
 
@@ -119,7 +119,7 @@ export const ProposalsProvider = ({ children }: { children: React.ReactNode }) =
     dispatch(rejectProposalPending());
     await instance
       .put<IProposal>(`/api/proposals/${id}/reject`, payload)
-      .then((res) => { dispatch(rejectProposalSuccess(res.data)); message.success("IProposal rejected"); })
+      .then((res) => { dispatch(rejectProposalSuccess(res.data)); message.success("Proposal rejected"); })
       .catch(() => { dispatch(rejectProposalError()); message.error("Failed to reject proposal"); });
   };
 
