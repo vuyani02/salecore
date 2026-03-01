@@ -11,7 +11,7 @@ import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined, SwapOutlined, UserSwitchOutlined,
   DeleteOutlined, HistoryOutlined, SearchOutlined, EditOutlined,
-  MoreOutlined,
+  MoreOutlined, RobotOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useOpportunitiesActions, useOpportunitiesState } from "@/providers/opportunitiesProvider";
@@ -23,6 +23,24 @@ import type { Opportunity, CreateOpportunityPayload } from "@/types/opportunitie
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+// ── Gemini ────────────────────────────────────────────────────────────────────
+// Move this to .env.local as NEXT_PUBLIC_GEMINI_API_KEY and regenerate your key
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? "AIzaSyD5BQ-JkA7eYR2uWQnDRwsydpqpqygZeBk";
+
+const callGemini = async (prompt: string): Promise<string> => {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    }
+  );
+  if (!res.ok) throw new Error("Gemini API error");
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No summary available.";
+};
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STAGES: Record<number, { label: string; color: string }> = {
@@ -391,6 +409,170 @@ const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModa
   );
 };
 
+// ── AI Activity Summary Modal ─────────────────────────────────────────────────
+interface AISummaryModalProps {
+  opportunity: Opportunity | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+const ACTIVITY_TYPES: Record<number, string> = {
+  1: "Meeting", 2: "Call", 3: "Email", 4: "Task", 5: "Presentation", 6: "Other",
+};
+const ACTIVITY_STATUSES: Record<number, string> = {
+  1: "Scheduled", 2: "Completed", 3: "Cancelled",
+};
+
+const AISummaryModal = ({ opportunity, open, onClose }: AISummaryModalProps) => {
+  const [summary,  setSummary]  = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState("");
+  const instance = getAxiosInstance();
+
+  useEffect(() => {
+    if (!open || !opportunity) return;
+    setSummary("");
+    setError("");
+    setLoading(true);
+
+    instance
+      .get("/api/activities", {
+        params: { relatedToType: 2, relatedToId: opportunity.id, pageSize: 50 },
+      })
+      .then(async (r) => {
+        const activities = r.data?.items ?? [];
+
+        if (activities.length === 0) {
+          setSummary("No activities have been logged for this opportunity yet.");
+          setLoading(false);
+          return;
+        }
+
+        const activityLines = activities
+          .map((a: any) => {
+            const type    = ACTIVITY_TYPES[a.type]    ?? "Activity";
+            const status  = ACTIVITY_STATUSES[a.status] ?? "Unknown";
+            const date    = a.dueDate ? dayjs(a.dueDate).format("DD MMM YYYY") : "no date";
+            const outcome = a.outcome ? ` Outcome: "${a.outcome}"` : "";
+            return `- ${type} on ${date} [${status}]: "${a.subject}"${outcome}`;
+          })
+          .join("\n");
+
+        const prompt = `You are a CRM assistant. Below is a list of sales activities for the opportunity titled "${opportunity.title}" with client "${opportunity.clientName ?? "Unknown"}". The deal is currently at the "${STAGES[opportunity.stage]?.label ?? "Unknown"}" stage with an estimated value of ${formatValue(opportunity.estimatedValue, opportunity.currency)} and ${opportunity.probability ?? 0}% probability.
+
+Activities:
+${activityLines}
+
+Write a concise 3–5 sentence summary for a sales manager. Cover: what has happened so far, where the deal currently stands, and any next steps or concerns worth flagging. Be professional and direct.`;
+
+        try {
+          const result = await callGemini(prompt);
+          setSummary(result);
+        } catch {
+          setError("Failed to generate summary. Please try again.");
+        } finally {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        setError("Failed to load activities.");
+        setLoading(false);
+      });
+  }, [open, opportunity]);
+
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={
+        <Flex justify="flex-end">
+          <Button onClick={onClose}>Close</Button>
+        </Flex>
+      }
+      destroyOnHidden
+      width={580}
+      title={
+        <Flex align="center" gap={10}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "linear-gradient(135deg, #707070, #404040)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <RobotOutlined style={{ color: "#fff", fontSize: 15 }} />
+          </div>
+          <Flex vertical gap={1}>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 14 }}>
+              AI Activity Summary
+            </Text>
+            <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400 }}>
+              {opportunity?.title}
+            </Text>
+          </Flex>
+        </Flex>
+      }
+    >
+      {loading ? (
+        <Flex vertical align="center" gap={12} style={{ padding: "32px 0" }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: "50%",
+            background: "rgba(112,112,112,0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <RobotOutlined style={{ fontSize: 22, color: "rgba(255,255,255,0.4)" }} />
+          </div>
+          <Flex vertical align="center" gap={4}>
+            <Text style={{ color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>Analysing activities...</Text>
+            <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
+              Gemini is reviewing the deal history
+            </Text>
+          </Flex>
+        </Flex>
+      ) : error ? (
+        <Flex align="center" gap={10} style={{
+          background: "rgba(255,77,79,0.08)",
+          border: "1px solid rgba(255,77,79,0.25)",
+          borderRadius: 8, padding: "12px 16px",
+        }}>
+          <Text style={{ color: "rgba(255,77,79,0.85)" }}>{error}</Text>
+        </Flex>
+      ) : (
+        <Flex vertical gap={12}>
+          {/* Context pills */}
+          <Flex gap={8} wrap="wrap">
+            <Tag color={STAGES[opportunity?.stage ?? 1]?.color} style={{ marginInlineEnd: 0 }}>
+              {STAGES[opportunity?.stage ?? 1]?.label}
+            </Tag>
+            <Tag style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)", marginInlineEnd: 0 }}>
+              {formatValue(opportunity?.estimatedValue, opportunity?.currency)}
+            </Tag>
+            <Tag style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)", marginInlineEnd: 0 }}>
+              {opportunity?.probability ?? 0}% probability
+            </Tag>
+          </Flex>
+
+          <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0" }} />
+
+          {/* Summary text */}
+          <div style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(112,112,112,0.25)",
+            borderRadius: 10,
+            padding: "16px 18px",
+          }}>
+            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              {summary}
+            </Text>
+          </div>
+
+          <Text style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>
+            Generated by Gemini 1.5 Flash · Based on logged activities only
+          </Text>
+        </Flex>
+      )}
+    </Modal>
+  );
+};
+
 // ── Pipeline Tab ──────────────────────────────────────────────────────────────
 const PipelineTab = ({ styles }: { styles: any }) => {
   const state                 = useOpportunitiesState();
@@ -475,6 +657,7 @@ const OpportunitiesPage = () => {
   const [assignTarget,    setAssignTarget]    = useState<Opportunity | null>(null);
   const [historyTarget,   setHistoryTarget]   = useState<string | null>(null);
   const [deleteTarget,    setDeleteTarget]    = useState<string | null>(null);
+  const [summarizeTarget, setSummarizeTarget] = useState<Opportunity | null>(null);
 
   // ── Filters ───────────────────────────────────────────────────────────────
   const [searchTerm,   setSearchTerm]   = useState("");
@@ -643,7 +826,14 @@ const OpportunitiesPage = () => {
             icon: <HistoryOutlined />,
             onClick: () => setHistoryTarget(record.id),
           },
+          {
+            key: "ai-summary",
+            label: "AI Activity Summary",
+            icon: <RobotOutlined />,
+            onClick: () => setSummarizeTarget(record),
+          },
           ...(canManage ? [
+            { type: "divider" as const },
             {
               key: "assign",
               label: "Assign",
@@ -801,6 +991,12 @@ const OpportunitiesPage = () => {
         opportunityId={historyTarget}
         open={!!historyTarget}
         onClose={() => setHistoryTarget(null)}
+      />
+
+      <AISummaryModal
+        opportunity={summarizeTarget}
+        open={!!summarizeTarget}
+        onClose={() => setSummarizeTarget(null)}
       />
 
       {/* Delete confirmation modal */}
