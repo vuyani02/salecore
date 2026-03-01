@@ -10,6 +10,12 @@ export interface Client {
   taxNumber?: string;
   companySize?: string;
   isActive?: boolean;
+  contactsCount?: number;
+  contractsCount?: number;
+  opportunitiesCount?: number;
+  createdByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ClientStats {
@@ -31,6 +37,7 @@ export interface ClientsQuery {
   pageSize?: number;
   searchTerm?: string;
   industry?: string;
+  clientType?: number;
   isActive?: boolean;
 }
 

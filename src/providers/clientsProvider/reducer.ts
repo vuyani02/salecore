@@ -25,8 +25,26 @@ export const ClientsReducer = handleActions<IClientsStateContext, IClientsStateC
     [ClientsActionEnums.updateClientError]:   (state, action) => ({ ...state, ...action.payload }),
 
     [ClientsActionEnums.deleteClientPending]: (state, action) => ({ ...state, ...action.payload }),
-    [ClientsActionEnums.deleteClientSuccess]: (state, action) => ({ ...state, ...action.payload }),
-    [ClientsActionEnums.deleteClientError]:   (state, action) => ({ ...state, ...action.payload }),
+
+    // ── Remove deleted client from local state immediately ─────────────────
+    [ClientsActionEnums.deleteClientSuccess]: (state, action) => {
+      const deletedId = (action.payload as any).deletedClientId;
+      const updatedClients = state.clients
+        ? {
+            ...state.clients,
+            items:      state.clients.items.filter((c) => c.id !== deletedId),
+            totalCount: Math.max(0, state.clients.totalCount - 1),
+          }
+        : state.clients;
+
+      return {
+        ...state,
+        ...(action.payload as any),
+        clients: updatedClients,
+      };
+    },
+
+    [ClientsActionEnums.deleteClientError]: (state, action) => ({ ...state, ...action.payload }),
   },
   INITIAL_STATE
 );

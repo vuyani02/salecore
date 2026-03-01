@@ -88,8 +88,6 @@ function SignUpContent() {
       if (scenario === "demo" && values.role)
         payload.role = values.role;
 
-      console.log("📦 Register payload:", JSON.stringify(payload, null, 2));
-
       const api = getAxiosInstance();
       const res = await api.post<AuthResponse>("/api/auth/register", payload);
       const auth = res.data;
