@@ -2,15 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Button, Card, Col, DatePicker, Flex, Form,
-  Input, InputNumber, Modal, Row, Select,
-  Table, Tag, Typography, Divider, Popconfirm, Tooltip,
+  Button, Card, Col, DatePicker, Descriptions, Divider, Dropdown,
+  Flex, Form, Input, InputNumber, Modal, Row, Select,
+  Table, Tag, Typography, Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
-  PlusOutlined, DeleteOutlined,
+  PlusOutlined, DeleteOutlined, MoreOutlined,
   CheckOutlined, CloseOutlined, SendOutlined,
-  InfoCircleOutlined,
+  InfoCircleOutlined, EyeOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useProposalsState, useProposalsActions } from "@/providers/proposalsProvider";
@@ -32,15 +32,6 @@ const PROPOSAL_STATUS: Record<number, { label: string; color: string }> = {
   4: { label: "Rejected",  color: "red"     },
 };
 
-const canManage = () => {
-  try {
-    const roles = JSON.parse(localStorage.getItem("roles") ?? "[]") as string[];
-    return roles.includes("Admin") || roles.includes("SalesManager");
-  } catch {
-    return false;
-  }
-};
-
 const fmt = (v?: number | null, currency = "ZAR") => {
   const n = Number(v ?? 0);
   return `${currency === "ZAR" ? "R" : "$"}${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -49,19 +40,15 @@ const fmt = (v?: number | null, currency = "ZAR") => {
 const calcLineTotal = (item: ICreateLineItemPayload) =>
   item.quantity * item.unitPrice * (1 - item.discount / 100) * (1 + item.taxRate / 100);
 
-// ── Line Items ────────────────────────────────────────────────────────────────
 const EMPTY_LINE: ICreateLineItemPayload = {
   productServiceName: "", description: "",
   quantity: 1, unitPrice: 0, discount: 0, taxRate: 15,
 };
 
-interface ILineItemsFormProps {
-  items: ICreateLineItemPayload[];
-  currency: string;
-  onChange: (items: ICreateLineItemPayload[]) => void;
-}
-
-const LineItemsForm = ({ items, currency, onChange }: ILineItemsFormProps) => {
+// ── Line Items Form ───────────────────────────────────────────────────────────
+const LineItemsForm = ({ items, currency, onChange }: {
+  items: ICreateLineItemPayload[]; currency: string; onChange: (items: ICreateLineItemPayload[]) => void;
+}) => {
   const addRow    = () => onChange([...items, { ...EMPTY_LINE }]);
   const removeRow = (i: number) => onChange(items.filter((_, idx) => idx !== i));
   const update    = (i: number, key: keyof ICreateLineItemPayload, val: string | number) => {
@@ -199,14 +186,9 @@ const SectionLabel = ({ step, title, subtitle }: { step: number; title: string; 
 );
 
 // ── Create Modal ──────────────────────────────────────────────────────────────
-interface ICreateModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (payload: ICreateProposalPayload) => void;
-  isPending: boolean;
-}
-
-const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) => {
+const CreateModal = ({ open, onClose, onSubmit, isPending }: {
+  open: boolean; onClose: () => void; onSubmit: (p: ICreateProposalPayload) => void; isPending: boolean;
+}) => {
   const [form]      = Form.useForm();
   const [lineItems, setLineItems] = useState<ICreateLineItemPayload[]>([{ ...EMPTY_LINE }]);
   const [currency,  setCurrency]  = useState("ZAR");
@@ -216,8 +198,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) 
 
   useEffect(() => {
     if (!open) return;
-    if (!oppsState.opportunities?.items?.length)
-      getOpportunities({ pageNumber: 1, pageSize: 100 });
+    if (!oppsState.opportunities?.items?.length) getOpportunities({ pageNumber: 1, pageSize: 100 });
   }, [open]);
 
   const opportunities = oppsState.opportunities?.items ?? [];
@@ -272,13 +253,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) 
           }
           rules={[{ required: true, message: "Please select an opportunity" }]}
         >
-          <Select
-            showSearch
-            placeholder="Search and select an opportunity…"
-            loading={oppsState.isPending}
-            optionFilterProp="children"
-            notFoundContent={oppsState.isPending ? "Loading…" : "No opportunities found"}
-          >
+          <Select showSearch placeholder="Search and select an opportunity…" loading={oppsState.isPending} optionFilterProp="children" notFoundContent={oppsState.isPending ? "Loading…" : "No opportunities found"}>
             {opportunities.map((o) => <Option key={o.id} value={o.id}>{o.title}</Option>)}
           </Select>
         </Form.Item>
@@ -338,15 +313,124 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: ICreateModalProps) 
   );
 };
 
-// ── Reject Modal ──────────────────────────────────────────────────────────────
-interface IRejectModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (reason: string) => void;
-  isPending: boolean;
-}
+// ── View Modal ────────────────────────────────────────────────────────────────
+const ViewModal = ({ proposal, open, onClose, styles }: {
+  proposal: IProposal | null; open: boolean; onClose: () => void; styles: any;
+}) => {
+  if (!proposal) return null;
 
-const RejectModal = ({ open, onClose, onSubmit, isPending }: IRejectModalProps) => {
+  const status = PROPOSAL_STATUS[proposal.status];
+
+  // Line items columns (read-only)
+  const lineItemCols = [
+    { title: "Product / Service", dataIndex: "productServiceName", render: (v: string) => <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>{v}</Text> },
+    { title: "Description",       dataIndex: "description",        render: (v: string) => <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>{v || "—"}</Text> },
+    { title: "Qty",   dataIndex: "quantity",   width: 60,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.7)" }}>{v}</Text> },
+    { title: "Price", dataIndex: "unitPrice",  width: 100, render: (v: number, r: any) => <Text style={{ color: "rgba(255,255,255,0.7)" }}>{fmt(v, proposal.currency)}</Text> },
+    { title: "Disc%", dataIndex: "discount",   width: 70,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.55)" }}>{v}%</Text> },
+    { title: "Tax%",  dataIndex: "taxRate",    width: 70,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.55)" }}>{v}%</Text> },
+    {
+      title: "Total",
+      width: 110,
+      render: (_: any, r: any) => (
+        <Text style={{ color: "#fff", fontWeight: 700 }}>
+          {fmt(r.quantity * r.unitPrice * (1 - r.discount / 100) * (1 + r.taxRate / 100), proposal.currency)}
+        </Text>
+      ),
+    },
+  ];
+
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      destroyOnHidden
+      width={820}
+      title={
+        <Flex vertical gap={6}>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: 700 }}>{proposal.title}</Text>
+          <Flex gap={6}>
+            {status && <Tag color={status.color} style={{ marginInlineEnd: 0 }}>{status.label}</Tag>}
+            <Tag style={{ marginInlineEnd: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)" }}>
+              {proposal.currency}
+            </Tag>
+          </Flex>
+        </Flex>
+      }
+    >
+      {/* Details */}
+      <Descriptions
+        column={2}
+        size="small"
+        style={{ marginBottom: 16 }}
+        labelStyle={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}
+        contentStyle={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600 }}
+      >
+        <Descriptions.Item label="Client">{proposal.clientName ?? "—"}</Descriptions.Item>
+        <Descriptions.Item label="Opportunity">{proposal.opportunityTitle ?? "—"}</Descriptions.Item>
+        <Descriptions.Item label="Valid Until">
+          {proposal.validUntil ? dayjs(proposal.validUntil).format("DD MMM YYYY") : "—"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Created">
+          {proposal.createdAt ? dayjs(proposal.createdAt).format("DD MMM YYYY") : "—"}
+        </Descriptions.Item>
+        {proposal.description && (
+          <Descriptions.Item label="Description" span={2}>{proposal.description}</Descriptions.Item>
+        )}
+        {proposal.rejectionReason && (
+          <Descriptions.Item label="Rejection Reason" span={2}>
+            <Text style={{ color: "rgba(255,77,79,0.85)" }}>{proposal.rejectionReason}</Text>
+          </Descriptions.Item>
+        )}
+      </Descriptions>
+
+      <Divider style={{ borderColor: "rgba(112,112,112,0.25)", margin: "0 0 16px" }} />
+
+      {/* Line items */}
+      <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 10 }}>
+        Line Items
+      </Text>
+      <Table
+        className={styles.lineItemTable}
+        dataSource={proposal.lineItems ?? []}
+        columns={lineItemCols}
+        rowKey={(_, i) => String(i)}
+        pagination={false}
+        size="small"
+        locale={{ emptyText: "No line items" }}
+      />
+
+      {/* Totals */}
+      {(proposal.lineItems?.length ?? 0) > 0 && (
+        <Flex vertical gap={6} style={{ marginTop: 16, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(112,112,112,0.25)", borderRadius: 8 }}>
+          <Flex justify="space-between">
+            <Text className={styles.totalsLabel}>Subtotal</Text>
+            <Text className={styles.totalsValue}>{fmt(proposal.subtotal, proposal.currency)}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text className={styles.totalsLabel}>Tax</Text>
+            <Text className={styles.totalsValue}>{fmt(proposal.totalTax, proposal.currency)}</Text>
+          </Flex>
+          <Flex justify="space-between">
+            <Text className={styles.totalsLabel}>Discount</Text>
+            <Text className={styles.totalsValue}>−{fmt(proposal.totalDiscount, proposal.currency)}</Text>
+          </Flex>
+          <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0" }} />
+          <Flex justify="space-between">
+            <Text className={styles.totalsFinalLabel}>Total</Text>
+            <Text className={styles.totalsFinalValue}>{fmt(proposal.totalAmount, proposal.currency)}</Text>
+          </Flex>
+        </Flex>
+      )}
+    </Modal>
+  );
+};
+
+// ── Reject Modal ──────────────────────────────────────────────────────────────
+const RejectModal = ({ open, onClose, onSubmit, isPending }: {
+  open: boolean; onClose: () => void; onSubmit: (reason: string) => void; isPending: boolean;
+}) => {
   const [reason, setReason] = useState("");
 
   const handleSubmit = () => {
@@ -356,10 +440,23 @@ const RejectModal = ({ open, onClose, onSubmit, isPending }: IRejectModalProps) 
   };
 
   return (
-    <Modal title="Reject Proposal" open={open} onCancel={onClose} onOk={handleSubmit} okText="Reject" okButtonProps={{ danger: true, loading: isPending }} destroyOnHidden>
+    <Modal
+      title="Reject Proposal"
+      open={open}
+      onCancel={() => { setReason(""); onClose(); }}
+      onOk={handleSubmit}
+      okText="Reject"
+      okButtonProps={{ danger: true, loading: isPending, disabled: !reason.trim() }}
+      destroyOnHidden
+    >
       <Flex vertical gap={8}>
         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Please provide a reason for rejection:</Text>
-        <TextArea rows={3} value={reason} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)} placeholder="e.g. Pricing too high, revise and resubmit" />
+        <TextArea
+          rows={3}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="e.g. Pricing too high, revise and resubmit"
+        />
       </Flex>
     </Modal>
   );
@@ -372,12 +469,23 @@ const ProposalsPage = () => {
   const { getProposals, createProposal, deleteProposal, submitProposal, approveProposal, rejectProposal } =
     useProposalsActions();
 
-  const [pageNumber,   setPageNumber]   = useState(1);
-  const [pageSize,     setPageSize]     = useState(10);
-  const [statusFilter, setStatusFilter] = useState<number | undefined>();
-  const [showCreate,   setShowCreate]   = useState(false);
-  const [showReject,   setShowReject]   = useState(false);
-  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
+  // ── Mounted + role ────────────────────────────────────────────────────────
+  const [canManage, setCanManage] = useState(false);
+  useEffect(() => {
+    const role = localStorage.getItem("user_role") ?? "";
+    setCanManage(["Admin", "SalesManager"].includes(role));
+  }, []);
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [pageNumber,    setPageNumber]    = useState(1);
+  const [pageSize,      setPageSize]      = useState(10);
+  const [statusFilter,  setStatusFilter]  = useState<number | undefined>();
+  const [showCreate,    setShowCreate]    = useState(false);
+  const [viewTarget,    setViewTarget]    = useState<IProposal | null>(null);
+  const [submitTarget,  setSubmitTarget]  = useState<string | null>(null);
+  const [approveTarget, setApproveTarget] = useState<string | null>(null);
+  const [rejectTarget,  setRejectTarget]  = useState<string | null>(null);
+  const [deleteTarget,  setDeleteTarget]  = useState<string | null>(null);
 
   useEffect(() => { getProposals({ pageNumber: 1, pageSize: 10 }); }, []);
   useEffect(() => { getProposals({ pageNumber, pageSize, status: statusFilter }); }, [pageNumber, pageSize, statusFilter]);
@@ -387,25 +495,42 @@ const ProposalsPage = () => {
 
   const refresh = () => getProposals({ pageNumber, pageSize, status: statusFilter });
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCreate = async (payload: ICreateProposalPayload) => {
     await createProposal(payload);
     setShowCreate(false);
     refresh();
   };
 
-  const handleDelete  = async (id: string) => { await deleteProposal(id);  refresh(); };
-  const handleSubmit  = async (id: string) => { await submitProposal(id);  refresh(); };
-  const handleApprove = async (id: string) => { await approveProposal(id); refresh(); };
+  const handleSubmit = async () => {
+    if (!submitTarget) return;
+    await submitProposal(submitTarget);
+    setSubmitTarget(null);
+    refresh();
+  };
 
-  const handleRejectClick  = (id: string) => { setRejectTarget(id); setShowReject(true); };
-  const handleRejectSubmit = async (reason: string) => {
+  const handleApprove = async () => {
+    if (!approveTarget) return;
+    await approveProposal(approveTarget);
+    setApproveTarget(null);
+    refresh();
+  };
+
+  const handleReject = async (reason: string) => {
     if (!rejectTarget) return;
     await rejectProposal(rejectTarget, { reason });
-    setShowReject(false);
     setRejectTarget(null);
     refresh();
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteProposal(deleteTarget);
+    setDeleteTarget(null);
+    refresh();
+  };
+
+  // ── Columns ───────────────────────────────────────────────────────────────
   const columns: ColumnsType<IProposal> = [
     {
       title: "Title",
@@ -426,7 +551,7 @@ const ProposalsPage = () => {
       },
     },
     {
-      title: "Total Amount",
+      title: "Total",
       dataIndex: "totalAmount",
       render: (v: number, record) => (
         <Text className={styles.cellPrimary}>{fmt(v, record.currency)}</Text>
@@ -435,59 +560,107 @@ const ProposalsPage = () => {
     {
       title: "Valid Until",
       dataIndex: "validUntil",
-      render: (d: string) => (
-        <Text className={styles.cellMuted}>{d ? dayjs(d).format("DD MMM YYYY") : "—"}</Text>
-      ),
+      render: (d: string) => {
+        const isExpired = d && dayjs(d).isBefore(dayjs(), "day");
+        return (
+          <Text style={{ color: isExpired ? "rgba(255,77,79,0.85)" : "rgba(255,255,255,0.55)" }}>
+            {d ? dayjs(d).format("DD MMM YYYY") : "—"}
+          </Text>
+        );
+      },
+    },
+    {
+      title: "Opportunity",
+      dataIndex: "opportunityTitle",
+      render: (v?: string) => <Text className={styles.cellMuted}>{v ?? "—"}</Text>,
     },
     {
       title: "Actions",
       key: "actions",
-      render: (_: unknown, record: IProposal) => (
-        <Flex gap={6} justify="flex-end" wrap="wrap">
-          {record.status === 1 && (
-            <>
-              <Popconfirm title="Submit this proposal for approval?" okText="Submit" cancelText="Cancel" onConfirm={() => handleSubmit(record.id)}>
-                <Button size="small" icon={<SendOutlined />} style={{ backgroundColor: "#707070", border: "none", color: "#fff", boxShadow: "none" }}>
-                  Submit
-                </Button>
-              </Popconfirm>
-              <Popconfirm title="Delete this draft proposal?" okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => handleDelete(record.id)}>
-                <Button size="small" danger icon={<DeleteOutlined />} style={{ boxShadow: "none" }}>Delete</Button>
-              </Popconfirm>
-            </>
-          )}
-          {record.status === 2 && canManage() && (
-            <>
-              <Button size="small" icon={<CheckOutlined />} style={{ backgroundColor: "#1a7a3a", border: "none", color: "#fff", boxShadow: "none" }} onClick={() => handleApprove(record.id)}>
-                Approve
-              </Button>
-              <Button size="small" danger icon={<CloseOutlined />} style={{ boxShadow: "none" }} onClick={() => handleRejectClick(record.id)}>
-                Reject
-              </Button>
-            </>
-          )}
-        </Flex>
-      ),
+      width: 60,
+      render: (_: unknown, record: IProposal) => {
+        const menuItems = [
+          // View — always available
+          {
+            key: "view",
+            label: "View Details",
+            icon: <EyeOutlined />,
+            onClick: () => setViewTarget(record),
+          },
+
+          // ── Draft actions ──
+          ...(record.status === 1 ? [
+            {
+              key: "submit",
+              label: "Submit for Approval",
+              icon: <SendOutlined />,
+              onClick: () => setSubmitTarget(record.id),
+            },
+            { type: "divider" as const },
+            {
+              key: "delete",
+              label: "Delete Draft",
+              icon: <DeleteOutlined />,
+              danger: true,
+              onClick: () => setDeleteTarget(record.id),
+            },
+          ] : []),
+
+          // ── Submitted — approve/reject (Admin/SalesManager only) ──
+          ...(record.status === 2 && canManage ? [
+            {
+              key: "approve",
+              label: "Approve",
+              icon: <CheckOutlined />,
+              onClick: () => setApproveTarget(record.id),
+            },
+            {
+              key: "reject",
+              label: "Reject",
+              icon: <CloseOutlined />,
+              danger: true,
+              onClick: () => setRejectTarget(record.id),
+            },
+          ] : []),
+        ];
+
+        return (
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">
+            <Button
+              size="small"
+              icon={<MoreOutlined />}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(112,112,112,0.3)",
+                color: "rgba(255,255,255,0.7)",
+                boxShadow: "none",
+              }}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
+      {/* Header */}
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Proposals</Title>
         <Button icon={<PlusOutlined />} className={styles.primaryBtn} onClick={() => setShowCreate(true)}>
-          Request Proposal
+          New Proposal
         </Button>
       </Flex>
 
+      {/* Status filter */}
       <Flex gap={12}>
         <Select
           placeholder="All Statuses"
           allowClear
           value={statusFilter}
           onChange={(v) => { setStatusFilter(v); setPageNumber(1); }}
-          style={{ minWidth: 160 }}
+          style={{ minWidth: 160, background: "#707070", border: "none" }}
         >
           {Object.entries(PROPOSAL_STATUS).map(([k, v]) => (
             <Option key={k} value={Number(k)}>{v.label}</Option>
@@ -495,6 +668,7 @@ const ProposalsPage = () => {
         </Select>
       </Flex>
 
+      {/* Table */}
       <Card className={styles.card} variant="outlined">
         <Table
           className={styles.table}
@@ -514,8 +688,60 @@ const ProposalsPage = () => {
         />
       </Card>
 
+      {/* ── Modals ── */}
       <CreateModal open={showCreate} onClose={() => setShowCreate(false)} onSubmit={handleCreate} isPending={state.isPending} />
-      <RejectModal open={showReject} onClose={() => setShowReject(false)} onSubmit={handleRejectSubmit} isPending={state.isPending} />
+
+      <ViewModal proposal={viewTarget} open={!!viewTarget} onClose={() => setViewTarget(null)} styles={styles} />
+
+      <RejectModal open={!!rejectTarget} onClose={() => setRejectTarget(null)} onSubmit={handleReject} isPending={state.isPending} />
+
+      {/* Submit confirmation */}
+      <Modal
+        open={!!submitTarget}
+        onCancel={() => setSubmitTarget(null)}
+        onOk={handleSubmit}
+        okText="Submit for Approval"
+        okButtonProps={{ style: { backgroundColor: "#707070", border: "none", boxShadow: "none" }, loading: state.isPending }}
+        cancelText="Cancel"
+        title="Submit Proposal"
+        width={420}
+      >
+        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+          Once submitted, the proposal will be locked for editing until it is approved or rejected by an Admin or Sales Manager.
+        </Text>
+      </Modal>
+
+      {/* Approve confirmation */}
+      <Modal
+        open={!!approveTarget}
+        onCancel={() => setApproveTarget(null)}
+        onOk={handleApprove}
+        okText="Approve"
+        okButtonProps={{ style: { backgroundColor: "#1a7a3a", border: "none", boxShadow: "none" }, loading: state.isPending }}
+        cancelText="Cancel"
+        title="Approve Proposal"
+        width={420}
+      >
+        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+          Approving this proposal will allow the team to proceed with creating a contract. This action cannot be undone.
+        </Text>
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onOk={handleDelete}
+        okText="Delete"
+        okButtonProps={{ danger: true, loading: state.isPending }}
+        cancelText="Cancel"
+        title="Delete Draft Proposal"
+        width={420}
+      >
+        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+          Are you sure you want to delete this draft? This action cannot be undone.
+        </Text>
+      </Modal>
 
     </Flex>
   );

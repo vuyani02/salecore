@@ -28,6 +28,7 @@ export interface IProposal {
   totalTax?: number;
   totalAmount?: number;
   lineItems?: IProposalLineItem[];
+  rejectionReason?: string;
   createdAt?: string;
 }
 
