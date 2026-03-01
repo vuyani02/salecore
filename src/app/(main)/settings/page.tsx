@@ -270,7 +270,6 @@ const InviteTab = ({ styles }: { styles: any }) => {
         },
         EMAILJS_PUBLIC_KEY
       );
-      console.log("✅ EmailJS result:", result);
 
       message.success(`Invite sent to ${email}`);
       setSentList((prev) => [{ email, role, sentAt: new Date().toISOString() }, ...prev]);

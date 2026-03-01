@@ -32,7 +32,8 @@ export const ClientsProvider = ({ children }: { children: React.ReactNode }) => 
     dispatch(getClientsPending());
     await instance
       .get<ClientPagedResult>("/api/clients", { params: query })
-      .then((response) => {dispatch(getClientsSuccess(response.data))
+      .then((response) => {
+        dispatch(getClientsSuccess(response.data))
       })
       .catch(() => {
         dispatch(getClientsError());
@@ -96,7 +97,6 @@ export const ClientsProvider = ({ children }: { children: React.ReactNode }) => 
       .delete(`/api/clients/${id}`)
       .then((response) => {
         dispatch(deleteClientSuccess(id));
-        console.log(response.data)
         message.success("Client deleted");
       })
       .catch(() => {
