@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button, Card, Col, DatePicker, Descriptions, Divider, Dropdown,
   Flex, Form, Input, Modal, Row, Select,
@@ -9,7 +9,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined, UserAddOutlined, CheckOutlined, DeleteOutlined,
-  MoreOutlined, EditOutlined, EyeOutlined,
+  MoreOutlined, EditOutlined, EyeOutlined, SearchOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -334,7 +334,7 @@ const ViewModal = ({ open, onClose, request }: { open: boolean; onClose: () => v
       title={
         <Flex align="center" gap={10}>
           <Flex vertical gap={4}>
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: 700 }}>{request.title}</Text>
+            <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 16, fontWeight: 700 }}>{request.title}</Text>
             <Flex gap={6}>
               {status   && <Tag color={status.color}   style={{ marginInlineEnd: 0 }}>{status.label}</Tag>}
               {priority && <Tag color={priority.color} style={{ marginInlineEnd: 0 }}>{priority.label}</Tag>}
@@ -345,21 +345,21 @@ const ViewModal = ({ open, onClose, request }: { open: boolean; onClose: () => v
     >
       {request.description && (
         <>
-          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>{request.description}</Text>
-          <Divider style={{ borderColor: "rgba(112,112,112,0.3)", margin: "14px 0" }} />
+          <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 13 }}>{request.description}</Text>
+          <Divider style={{ borderColor: "rgba(0,0,0,0.1)", margin: "14px 0" }} />
         </>
       )}
 
       <Descriptions
         column={2}
         size="small"
-        labelStyle={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}
-        contentStyle={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600 }}
+        labelStyle={{ color: "rgba(0,0,0,0.45)", fontSize: 12 }}
+        contentStyle={{ color: "rgba(0,0,0,0.85)", fontSize: 13, fontWeight: 600 }}
       >
         <Descriptions.Item label="Requested By">{request.requestedByName ?? "—"}</Descriptions.Item>
-        <Descriptions.Item label="Assigned To">{request.assignedToName ?? <Text style={{ color: "rgba(255,77,79,0.8)" }}>Unassigned</Text>}</Descriptions.Item>
+        <Descriptions.Item label="Assigned To">{request.assignedToName ?? <Text style={{ color: "rgba(200,50,50,0.85)" }}>Unassigned</Text>}</Descriptions.Item>
         <Descriptions.Item label="Required By">
-          <Text style={{ color: isOverdue ? "rgba(255,77,79,0.85)" : "rgba(255,255,255,0.85)" }}>
+          <Text style={{ color: isOverdue ? "rgba(200,50,50,0.85)" : "rgba(0,0,0,0.85)" }}>
             {request.requiredByDate ? dayjs(request.requiredByDate).format("DD MMM YYYY") : "—"}
             {isOverdue && " ⚠ Overdue"}
           </Text>
@@ -390,9 +390,11 @@ const PricingRequestsPage = () => {
 
   const [tab,            setTab]            = useState<TabKey>("all");
   const [pageNumber,     setPageNumber]     = useState(1);
-  const [pageSize,       setPageSize]       = useState(10);
+  const [pageSize,       setPageSize]       = useState(4);
   const [statusFilter,   setStatusFilter]   = useState<number | undefined>();
   const [priorityFilter, setPriorityFilter] = useState<number | undefined>();
+  const [searchTerm,     setSearchTerm]     = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showCreate,   setShowCreate]   = useState(false);
   const [showAssign,   setShowAssign]   = useState(false);
@@ -403,10 +405,19 @@ const PricingRequestsPage = () => {
   const [deleteTarget,   setDeleteTarget]   = useState<string | null>(null);
 
   const load = (t = tab, p = pageNumber, ps = pageSize) => {
-    const query = { pageNumber: p, pageSize: ps, status: statusFilter, priority: priorityFilter };
+    const query = { pageNumber: p, pageSize: ps, status: statusFilter, priority: priorityFilter, searchTerm: searchTerm || undefined };
     if (t === "all")     getPricingRequests(query);
     if (t === "mine")    getMyRequests({ pageNumber: p, pageSize: ps });
     if (t === "pending") getPendingRequests({ pageNumber: p, pageSize: ps });
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPageNumber(1);
+      getPricingRequests({ pageNumber: 1, pageSize, searchTerm: val || undefined, status: statusFilter, priority: priorityFilter });
+    }, 400);
   };
 
   useEffect(() => { getPricingRequests({ pageNumber: 1, pageSize: 10 }); }, []);
@@ -586,8 +597,17 @@ const PricingRequestsPage = () => {
         </Button>
       </Flex>
 
-      {tab === "all" && (
-        <Flex gap={12}>
+      {tab === "all" && mounted && (
+        <Flex gap={12} wrap="wrap">
+          <Input
+            prefix={<SearchOutlined style={{ color: "rgba(255,255,255,0.3)" }} />}
+            placeholder="Search by title..."
+            className={styles.searchInput}
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            allowClear
+            style={{ width: 220 }}
+          />
           <Select
             className={styles.filterSelect}
             placeholder="All Statuses"
@@ -600,7 +620,6 @@ const PricingRequestsPage = () => {
               <Option key={k} value={Number(k)}>{v.label}</Option>
             ))}
           </Select>
-
           <Select
             className={styles.filterSelect}
             placeholder="All Priorities"

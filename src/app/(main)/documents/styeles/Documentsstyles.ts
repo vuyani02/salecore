@@ -18,11 +18,71 @@ export const useDocumentsPageStyles = createStyles(({ css }) => ({
     color: #ffffff !important;
     font-weight: 600;
 
-    &:hover,
-    &:focus {
+    &:hover, &:focus {
       background-color: #70707081 !important;
       color: #ffffff !important;
       border: none !important;
+    }
+  `,
+
+  searchInput: css`
+    background-color: #707070 !important;
+    border: none !important;
+    color: #ffffff !important;
+
+    input {
+      background-color: transparent !important;
+      color: #ffffff !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.35) !important;
+      }
+    }
+
+    .ant-input-clear-icon {
+      color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    &:hover, &:focus-within {
+      box-shadow: none !important;
+      background-color: #707070 !important;
+    }
+  `,
+
+  filterSelect: css`
+    background-color: #707070 !important;
+    border: none !important;
+    border-radius: 6px !important;
+
+    .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-radius: 6px !important;
+      color: #ffffff !important;
+    }
+
+    &:hover .ant-select-selector,
+    &.ant-select-focused .ant-select-selector,
+    &.ant-select-open .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+    }
+
+    .ant-select-selection-placeholder {
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    .ant-select-selection-item {
+      color: #ffffff !important;
+    }
+
+    .ant-select-arrow, .ant-select-clear {
+      color: rgba(255, 255, 255, 0.55) !important;
+      background: transparent !important;
     }
   `,
 
@@ -86,18 +146,12 @@ export const useDocumentsPageStyles = createStyles(({ css }) => ({
       box-shadow: none !important;
       border-radius: 6px !important;
 
-      a, button {
-        color: #ffffff !important;
-      }
+      a, button { color: #ffffff !important; }
 
-      &:hover,
-      &:focus {
+      &:hover, &:focus {
         background-color: #70707081 !important;
         border: none !important;
-
-        a, button {
-          color: #ffffff !important;
-        }
+        a, button { color: #ffffff !important; }
       }
     }
 
@@ -109,6 +163,11 @@ export const useDocumentsPageStyles = createStyles(({ css }) => ({
     .ant-pagination-disabled .ant-pagination-item-link {
       opacity: 0.3 !important;
       cursor: not-allowed;
+    }
+
+    .ant-pagination-jump-prev .ant-pagination-item-ellipsis,
+    .ant-pagination-jump-next .ant-pagination-item-ellipsis {
+      color: rgba(255, 255, 255, 0.35) !important;
     }
 
     .ant-pagination .ant-select .ant-select-selector {
@@ -144,27 +203,5 @@ export const useDocumentsPageStyles = createStyles(({ css }) => ({
     justify-content: center;
     font-size: 16px;
     flex-shrink: 0;
-  `,
-
-  uploadArea: css`
-    background: rgba(255, 255, 255, 0.02) !important;
-    border: 1px dashed rgba(112, 112, 112, 0.45) !important;
-    border-radius: 10px !important;
-
-    .ant-upload-drag-icon {
-      color: rgba(255, 255, 255, 0.3) !important;
-    }
-
-    .ant-upload-text {
-      color: rgba(255, 255, 255, 0.7) !important;
-    }
-
-    .ant-upload-hint {
-      color: rgba(255, 255, 255, 0.35) !important;
-    }
-
-    &:hover {
-      border-color: rgba(112, 112, 112, 0.7) !important;
-    }
   `,
 }));

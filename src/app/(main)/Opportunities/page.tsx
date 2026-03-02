@@ -3,15 +3,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button, Card, Col, DatePicker, Flex, Form,
-  Input, InputNumber, Modal, Popconfirm,
-  Row, Select, Table, Tag, Tabs, Timeline,
-  Typography, Divider, Tooltip, Dropdown
+  Input, InputNumber, Modal, Row, Select, Table,
+  Tag, Tabs, Timeline, Typography, Divider, Dropdown
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined, SwapOutlined, UserSwitchOutlined,
-  DeleteOutlined, HistoryOutlined, SearchOutlined, EditOutlined,
-  MoreOutlined, RobotOutlined,
+  DeleteOutlined, HistoryOutlined, SearchOutlined,
+  EditOutlined, MoreOutlined, RobotOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useOpportunitiesActions, useOpportunitiesState } from "@/providers/opportunitiesProvider";
@@ -24,32 +23,45 @@ import type { Opportunity, CreateOpportunityPayload } from "@/types/opportunitie
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-// ── Gemini ────────────────────────────────────────────────────────────────────
-// Move this to .env.local as NEXT_PUBLIC_GEMINI_API_KEY and regenerate your key
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? "AIzaSyD5BQ-JkA7eYR2uWQnDRwsydpqpqygZeBk";
+// ── Groq ──────────────────────────────────────────────────────────────────────
+const GROQ_API_KEY = process.env.NEXT_PUBLIC_GROQ_API_KEY ?? "";
 
-const callGemini = async (prompt: string): Promise<string> => {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    }
-  );
-  if (!res.ok) throw new Error("Gemini API error");
+const callGroq = async (prompt: string): Promise<string> => {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 500,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => ({}));
+    console.error("Groq API error:", res.status, errorBody);
+    throw new Error(`Groq ${res.status}: ${errorBody?.error?.message ?? "Unknown error"}`);
+  }
+
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No summary available.";
+  console.log("Groq response:", data);
+
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) throw new Error("Empty response from Groq");
+  return text;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const STAGES: Record<number, { label: string; color: string }> = {
-  1: { label: "Lead",         color: "purple" },
-  2: { label: "Qualified",    color: "blue"   },
-  3: { label: "Proposal",     color: "gold"   },
-  4: { label: "Negotiation",  color: "cyan"   },
-  5: { label: "Closed Won",   color: "green"  },
-  6: { label: "Closed Lost",  color: "red"    },
+  1: { label: "Lead",        color: "purple" },
+  2: { label: "Qualified",   color: "blue"   },
+  3: { label: "Proposal",    color: "gold"   },
+  4: { label: "Negotiation", color: "cyan"   },
+  5: { label: "Closed Won",  color: "green"  },
+  6: { label: "Closed Lost", color: "red"    },
 };
 
 const SOURCES: Record<number, string> = {
@@ -60,25 +72,21 @@ const SOURCES: Record<number, string> = {
   5: "RFP",
 };
 
-const STAGE_OPTIONS = Object.entries(STAGES).map(([k, v]) => ({ value: Number(k), label: v.label }));
+const STAGE_OPTIONS  = Object.entries(STAGES).map(([k, v]) => ({ value: Number(k), label: v.label }));
 const SOURCE_OPTIONS = Object.entries(SOURCES).map(([k, v]) => ({ value: Number(k), label: v }));
 
 type TabKey = "all" | "mine" | "pipeline";
 
 const formatValue = (value?: number | null, currency?: string | null) => {
-  const v = Number(value ?? 0);
+  const v      = Number(value ?? 0);
   const prefix = (currency ?? "ZAR").toUpperCase() === "ZAR" ? "R" : "$";
   return `${prefix}${v.toLocaleString()}`;
 };
 
 // ── Stage History Modal ───────────────────────────────────────────────────────
-interface StageHistoryModalProps {
-  opportunityId: string | null;
-  open: boolean;
-  onClose: () => void;
-}
-
-const StageHistoryModal = ({ opportunityId, open, onClose }: StageHistoryModalProps) => {
+const StageHistoryModal = ({
+  opportunityId, open, onClose,
+}: { opportunityId: string | null; open: boolean; onClose: () => void }) => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const instance = getAxiosInstance();
@@ -86,8 +94,7 @@ const StageHistoryModal = ({ opportunityId, open, onClose }: StageHistoryModalPr
   useEffect(() => {
     if (!open || !opportunityId) return;
     setLoading(true);
-    instance
-      .get(`/api/opportunities/${opportunityId}/stage-history`)
+    instance.get(`/api/opportunities/${opportunityId}/stage-history`)
       .then((r) => setHistory(r.data ?? []))
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
@@ -117,8 +124,12 @@ const StageHistoryModal = ({ opportunityId, open, onClose }: StageHistoryModalPr
                   )}
                   <Tag color={STAGES[h.toStage]?.color}>{STAGES[h.toStage]?.label}</Tag>
                 </Flex>
-                {h.notes && <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>{h.notes}</Text>}
-                {h.lossReason && <Text style={{ color: "rgba(255,77,79,0.8)", fontSize: 12 }}>Loss reason: {h.lossReason}</Text>}
+                {h.notes && (
+                  <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>{h.notes}</Text>
+                )}
+                {h.lossReason && (
+                  <Text style={{ color: "rgba(255,77,79,0.8)", fontSize: 12 }}>Loss reason: {h.lossReason}</Text>
+                )}
                 <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
                   {h.changedByName} · {h.changedAt ? dayjs(h.changedAt).format("DD MMM YYYY HH:mm") : "—"}
                 </Text>
@@ -132,33 +143,19 @@ const StageHistoryModal = ({ opportunityId, open, onClose }: StageHistoryModalPr
 };
 
 // ── Move Stage Modal ──────────────────────────────────────────────────────────
-interface MoveStageModalProps {
-  opportunity: Opportunity | null;
-  open: boolean;
-  onClose: () => void;
+const MoveStageModal = ({
+  opportunity, open, onClose, onSubmit, isPending,
+}: {
+  opportunity: Opportunity | null; open: boolean; onClose: () => void;
   onSubmit: (id: string, payload: { stage: number; notes?: string; lossReason?: string }) => void;
   isPending: boolean;
-}
-
-const MoveStageModal = ({ opportunity, open, onClose, onSubmit, isPending }: MoveStageModalProps) => {
-  const [form] = Form.useForm();
+}) => {
+  const [form]          = Form.useForm();
   const [selectedStage, setSelectedStage] = useState<number | undefined>();
 
   useEffect(() => {
-    if (open) {
-      form.resetFields();
-      setSelectedStage(undefined);
-    }
+    if (open) { form.resetFields(); setSelectedStage(undefined); }
   }, [open]);
-
-  const handleFinish = (values: any) => {
-    if (!opportunity) return;
-    onSubmit(opportunity.id, {
-      stage:      values.stage,
-      notes:      values.notes,
-      lossReason: values.lossReason,
-    });
-  };
 
   return (
     <Modal title="Move Stage" open={open} onCancel={onClose} footer={null} destroyOnHidden width={440}>
@@ -168,7 +165,10 @@ const MoveStageModal = ({ opportunity, open, onClose, onSubmit, isPending }: Mov
           <Tag color={STAGES[opportunity.stage]?.color}>{STAGES[opportunity.stage]?.label}</Tag>
         </Flex>
       )}
-      <Form form={form} layout="vertical" onFinish={handleFinish}>
+      <Form form={form} layout="vertical" onFinish={(values) => {
+        if (!opportunity) return;
+        onSubmit(opportunity.id, { stage: values.stage, notes: values.notes, lossReason: values.lossReason });
+      }}>
         <Form.Item name="stage" label="Move To" rules={[{ required: true, message: "Select a stage" }]}>
           <Select placeholder="Select new stage" onChange={(v) => setSelectedStage(v)}>
             {STAGE_OPTIONS.filter((s) => s.value !== opportunity?.stage).map((s) => (
@@ -178,24 +178,21 @@ const MoveStageModal = ({ opportunity, open, onClose, onSubmit, isPending }: Mov
             ))}
           </Select>
         </Form.Item>
-
         <Form.Item name="notes" label="Notes">
           <Input.TextArea rows={2} placeholder="Optional notes about this stage change..." />
         </Form.Item>
-
         {selectedStage === 6 && (
-          <Form.Item name="lossReason" label="Loss Reason" rules={[{ required: true, message: "Loss reason is required for Closed Lost" }]}>
+          <Form.Item
+            name="lossReason"
+            label="Loss Reason"
+            rules={[{ required: true, message: "Loss reason is required for Closed Lost" }]}
+          >
             <Input.TextArea rows={2} placeholder="Why was this opportunity lost?" />
           </Form.Item>
         )}
-
         <Flex justify="flex-end" gap={8} style={{ marginTop: 8 }}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button
-            htmlType="submit"
-            loading={isPending}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-          >
+          <Button htmlType="submit" loading={isPending} style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}>
             Move Stage
           </Button>
         </Flex>
@@ -205,15 +202,12 @@ const MoveStageModal = ({ opportunity, open, onClose, onSubmit, isPending }: Mov
 };
 
 // ── Assign Modal ──────────────────────────────────────────────────────────────
-interface AssignModalProps {
-  opportunity: Opportunity | null;
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (id: string, userId: string) => void;
-  isPending: boolean;
-}
-
-const AssignModal = ({ opportunity, open, onClose, onSubmit, isPending }: AssignModalProps) => {
+const AssignModal = ({
+  opportunity, open, onClose, onSubmit, isPending,
+}: {
+  opportunity: Opportunity | null; open: boolean; onClose: () => void;
+  onSubmit: (id: string, userId: string) => void; isPending: boolean;
+}) => {
   const [form]       = Form.useForm();
   const usersState   = useUsersState();
   const { getUsers } = useUsersActions();
@@ -226,31 +220,17 @@ const AssignModal = ({ opportunity, open, onClose, onSubmit, isPending }: Assign
 
   const users = usersState.users?.items ?? [];
 
-  const handleFinish = (values: any) => {
-    if (!opportunity) return;
-    onSubmit(opportunity.id, values.userId);
-  };
-
   return (
     <Modal title="Assign Opportunity" open={open} onCancel={onClose} footer={null} destroyOnHidden width={400}>
-      <Form form={form} layout="vertical" onFinish={handleFinish}>
+      <Form form={form} layout="vertical" onFinish={(v) => { if (opportunity) onSubmit(opportunity.id, v.userId); }}>
         <Form.Item name="userId" label="Assign To" rules={[{ required: true, message: "Select a user" }]}>
-          <Select
-            showSearch
-            placeholder="Select a team member"
-            loading={usersState.isPending}
-            optionFilterProp="children"
-          >
+          <Select showSearch placeholder="Select a team member" loading={usersState.isPending} optionFilterProp="children">
             {users.map((u) => <Option key={u.id} value={u.id}>{u.fullName} — {u.roles?.[0]}</Option>)}
           </Select>
         </Form.Item>
         <Flex justify="flex-end" gap={8}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button
-            htmlType="submit"
-            loading={isPending}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-          >
+          <Button htmlType="submit" loading={isPending} style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}>
             Assign
           </Button>
         </Flex>
@@ -259,22 +239,19 @@ const AssignModal = ({ opportunity, open, onClose, onSubmit, isPending }: Assign
   );
 };
 
-// ── Create Modal ──────────────────────────────────────────────────────────────
-interface CreateModalProps {
-  open: boolean;
-  onClose: () => void;
+// ── Create / Edit Modal ───────────────────────────────────────────────────────
+const CreateModal = ({
+  open, onClose, onSubmit, isPending, initial,
+}: {
+  open: boolean; onClose: () => void;
   onSubmit: (payload: CreateOpportunityPayload) => void;
-  isPending: boolean;
-  initial?: Opportunity | null;
-}
-
-const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModalProps) => {
-  const [form]          = Form.useForm();
-  const isEdit          = !!initial;
-  const [contacts,      setContacts]      = useState<any[]>([]);
+  isPending: boolean; initial?: Opportunity | null;
+}) => {
+  const [form]            = Form.useForm();
+  const isEdit            = !!initial;
+  const [contacts,        setContacts]        = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
-  const instance = getAxiosInstance();
-
+  const instance       = getAxiosInstance();
   const clientsState   = useClientsState();
   const { getClients } = useClientsActions();
 
@@ -286,7 +263,6 @@ const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModa
         ...initial,
         expectedCloseDate: initial.expectedCloseDate ? dayjs(initial.expectedCloseDate) : undefined,
       });
-      // load contacts for the pre-selected client
       if (initial.clientId) {
         setLoadingContacts(true);
         instance.get(`/api/contacts/by-client/${initial.clientId}`)
@@ -317,32 +293,34 @@ const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModa
     }
   };
 
-  const handleFinish = (values: any) => {
-    onSubmit({ ...values, expectedCloseDate: values.expectedCloseDate?.format("YYYY-MM-DD") });
-    form.resetFields();
-    setContacts([]);
-  };
-
   return (
-    <Modal title={isEdit ? "Edit Opportunity" : "Add Opportunity"} open={open} onCancel={onClose} footer={null} destroyOnHidden width={560}>
-      <Form form={form} layout="vertical" onFinish={handleFinish} initialValues={{ stage: 1, source: 1, currency: "ZAR", probability: 30, estimatedValue: 0 }}>
-
+    <Modal
+      title={isEdit ? "Edit Opportunity" : "Add Opportunity"}
+      open={open} onCancel={onClose} footer={null} destroyOnHidden width={560}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={(v) => {
+          onSubmit({ ...v, expectedCloseDate: v.expectedCloseDate?.format("YYYY-MM-DD") });
+          form.resetFields();
+          setContacts([]);
+        }}
+        initialValues={{ stage: 1, source: 1, currency: "ZAR", probability: 30, estimatedValue: 0 }}
+      >
         <Form.Item name="title" label="Title" rules={[{ required: true, message: "Title is required" }]}>
           <Input placeholder="e.g. Annual SLA Deal" />
         </Form.Item>
-
         <Form.Item name="clientId" label="Client" rules={[{ required: true, message: "Client is required" }]}>
           <Select showSearch placeholder="Select a client" loading={clientsState.isPending} optionFilterProp="children" onChange={handleClientChange}>
             {clients.map((c) => <Option key={c.id} value={c.id}>{c.name}</Option>)}
           </Select>
         </Form.Item>
-
         <Form.Item name="contactId" label="Contact">
           <Select showSearch placeholder="Select a contact" loading={loadingContacts} optionFilterProp="children" allowClear disabled={contacts.length === 0}>
             {contacts.map((c) => <Option key={c.id} value={c.id}>{c.firstName} {c.lastName}</Option>)}
           </Select>
         </Form.Item>
-
         <Row gutter={12}>
           <Col span={12}>
             <Form.Item name="estimatedValue" label="Estimated Value">
@@ -358,24 +336,18 @@ const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModa
             </Form.Item>
           </Col>
         </Row>
-
         <Row gutter={12}>
           <Col span={12}>
             <Form.Item name="stage" label="Stage">
-              <Select>
-                {STAGE_OPTIONS.map((s) => <Option key={s.value} value={s.value}>{s.label}</Option>)}
-              </Select>
+              <Select>{STAGE_OPTIONS.map((s) => <Option key={s.value} value={s.value}>{s.label}</Option>)}</Select>
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item name="source" label="Source">
-              <Select>
-                {SOURCE_OPTIONS.map((s) => <Option key={s.value} value={s.value}>{s.label}</Option>)}
-              </Select>
+              <Select>{SOURCE_OPTIONS.map((s) => <Option key={s.value} value={s.value}>{s.label}</Option>)}</Select>
             </Form.Item>
           </Col>
         </Row>
-
         <Row gutter={12}>
           <Col span={12}>
             <Form.Item name="probability" label="Probability (%)">
@@ -388,57 +360,38 @@ const CreateModal = ({ open, onClose, onSubmit, isPending, initial }: CreateModa
             </Form.Item>
           </Col>
         </Row>
-
         <Form.Item name="description" label="Description">
           <Input.TextArea rows={3} placeholder="Optional notes..." />
         </Form.Item>
-
         <Flex justify="flex-end" gap={8}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button
-            htmlType="submit"
-            loading={isPending}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-          >
+          <Button htmlType="submit" loading={isPending} style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}>
             {isEdit ? "Save Changes" : "Create"}
           </Button>
         </Flex>
-
       </Form>
     </Modal>
   );
 };
 
 // ── AI Activity Summary Modal ─────────────────────────────────────────────────
-interface AISummaryModalProps {
-  opportunity: Opportunity | null;
-  open: boolean;
-  onClose: () => void;
-}
+const ACTIVITY_TYPES: Record<number, string>    = { 1: "Meeting", 2: "Call", 3: "Email", 4: "Task", 5: "Presentation", 6: "Other" };
+const ACTIVITY_STATUSES: Record<number, string> = { 1: "Scheduled", 2: "Completed", 3: "Cancelled" };
 
-const ACTIVITY_TYPES: Record<number, string> = {
-  1: "Meeting", 2: "Call", 3: "Email", 4: "Task", 5: "Presentation", 6: "Other",
-};
-const ACTIVITY_STATUSES: Record<number, string> = {
-  1: "Scheduled", 2: "Completed", 3: "Cancelled",
-};
-
-const AISummaryModal = ({ opportunity, open, onClose }: AISummaryModalProps) => {
-  const [summary,  setSummary]  = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
+const AISummaryModal = ({
+  opportunity, open, onClose,
+}: { opportunity: Opportunity | null; open: boolean; onClose: () => void }) => {
+  const [summary, setSummary] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
   const instance = getAxiosInstance();
 
   useEffect(() => {
     if (!open || !opportunity) return;
-    setSummary("");
-    setError("");
-    setLoading(true);
+    setSummary(""); setError(""); setLoading(true);
 
     instance
-      .get("/api/activities", {
-        params: { relatedToType: 2, relatedToId: opportunity.id, pageSize: 50 },
-      })
+      .get("/api/activities", { params: { relatedToType: 2, relatedToId: opportunity.id, pageSize: 50 } })
       .then(async (r) => {
         const activities = r.data?.items ?? [];
 
@@ -450,7 +403,7 @@ const AISummaryModal = ({ opportunity, open, onClose }: AISummaryModalProps) => 
 
         const activityLines = activities
           .map((a: any) => {
-            const type    = ACTIVITY_TYPES[a.type]    ?? "Activity";
+            const type    = ACTIVITY_TYPES[a.type]      ?? "Activity";
             const status  = ACTIVITY_STATUSES[a.status] ?? "Unknown";
             const date    = a.dueDate ? dayjs(a.dueDate).format("DD MMM YYYY") : "no date";
             const outcome = a.outcome ? ` Outcome: "${a.outcome}"` : "";
@@ -458,23 +411,19 @@ const AISummaryModal = ({ opportunity, open, onClose }: AISummaryModalProps) => 
           })
           .join("\n");
 
-        const prompt = `You are a CRM assistant. Below is a list of sales activities for the opportunity titled "${opportunity.title}" with client "${opportunity.clientName ?? "Unknown"}". The deal is currently at the "${STAGES[opportunity.stage]?.label ?? "Unknown"}" stage with an estimated value of ${formatValue(opportunity.estimatedValue, opportunity.currency)} and ${opportunity.probability ?? 0}% probability.
-
-Activities:
-${activityLines}
-
-Write a concise 3–5 sentence summary for a sales manager. Cover: what has happened so far, where the deal currently stands, and any next steps or concerns worth flagging. Be professional and direct.`;
+        const prompt = `You are a CRM assistant. Below is a list of sales activities for the opportunity titled "${opportunity.title}" with client "${opportunity.clientName ?? "Unknown"}". The deal is currently at the "${STAGES[opportunity.stage]?.label ?? "Unknown"}" stage with an estimated value of ${formatValue(opportunity.estimatedValue, opportunity.currency)} and ${opportunity.probability ?? 0}% probability.\n\nActivities:\n${activityLines}\n\nWrite a concise 3–5 sentence summary for a sales manager. Cover: what has happened so far, where the deal currently stands, and any next steps or concerns worth flagging. Be professional and direct.`;
 
         try {
-          const result = await callGemini(prompt);
-          setSummary(result);
-        } catch {
-          setError("Failed to generate summary. Please try again.");
+          setSummary(await callGroq(prompt));
+        } catch (err: any) {
+          console.error("Summary generation failed:", err);
+          setError(err?.message ?? "Failed to generate summary. Please try again.");
         } finally {
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Failed to load activities:", err);
         setError("Failed to load activities.");
         setLoading(false);
       });
@@ -484,88 +433,57 @@ Write a concise 3–5 sentence summary for a sales manager. Cover: what has happ
     <Modal
       open={open}
       onCancel={onClose}
-      footer={
-        <Flex justify="flex-end">
-          <Button onClick={onClose}>Close</Button>
-        </Flex>
-      }
+      footer={<Flex justify="flex-end"><Button onClick={onClose}>Close</Button></Flex>}
       destroyOnHidden
       width={580}
       title={
         <Flex align="center" gap={10}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: "linear-gradient(135deg, #707070, #404040)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #707070, #404040)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <RobotOutlined style={{ color: "#fff", fontSize: 15 }} />
           </div>
           <Flex vertical gap={1}>
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 14 }}>
-              AI Activity Summary
-            </Text>
-            <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400 }}>
-              {opportunity?.title}
-            </Text>
+            <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 14 }}>AI Activity Summary</Text>
+            <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 12, fontWeight: 400 }}>{opportunity?.title}</Text>
           </Flex>
         </Flex>
       }
     >
       {loading ? (
         <Flex vertical align="center" gap={12} style={{ padding: "32px 0" }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: "50%",
-            background: "rgba(112,112,112,0.15)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <RobotOutlined style={{ fontSize: 22, color: "rgba(255,255,255,0.4)" }} />
+          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <RobotOutlined style={{ fontSize: 22, color: "rgba(0,0,0,0.25)" }} />
           </div>
           <Flex vertical align="center" gap={4}>
-            <Text style={{ color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>Analysing activities...</Text>
-            <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-              Gemini is reviewing the deal history
-            </Text>
+            <Text style={{ color: "rgba(0,0,0,0.75)", fontWeight: 600 }}>Analysing activities...</Text>
+            <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 12 }}>Groq is reviewing the deal history</Text>
           </Flex>
         </Flex>
       ) : error ? (
-        <Flex align="center" gap={10} style={{
-          background: "rgba(255,77,79,0.08)",
-          border: "1px solid rgba(255,77,79,0.25)",
-          borderRadius: 8, padding: "12px 16px",
-        }}>
-          <Text style={{ color: "rgba(255,77,79,0.85)" }}>{error}</Text>
+        <Flex vertical gap={8}>
+          <Flex align="center" gap={10} style={{ background: "rgba(255,77,79,0.06)", border: "1px solid rgba(255,77,79,0.2)", borderRadius: 8, padding: "12px 16px" }}>
+            <Text style={{ color: "rgba(200,50,50,0.9)" }}>{error}</Text>
+          </Flex>
+          <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>
+            Check the browser console (F12) for more details.
+          </Text>
         </Flex>
       ) : (
         <Flex vertical gap={12}>
-          {/* Context pills */}
           <Flex gap={8} wrap="wrap">
             <Tag color={STAGES[opportunity?.stage ?? 1]?.color} style={{ marginInlineEnd: 0 }}>
               {STAGES[opportunity?.stage ?? 1]?.label}
             </Tag>
-            <Tag style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)", marginInlineEnd: 0 }}>
-              {formatValue(opportunity?.estimatedValue, opportunity?.currency)}
-            </Tag>
-            <Tag style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)", marginInlineEnd: 0 }}>
-              {opportunity?.probability ?? 0}% probability
-            </Tag>
+            <Tag style={{ marginInlineEnd: 0 }}>{formatValue(opportunity?.estimatedValue, opportunity?.currency)}</Tag>
+            <Tag style={{ marginInlineEnd: 0 }}>{opportunity?.probability ?? 0}% probability</Tag>
           </Flex>
-
-          <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0" }} />
-
-          {/* Summary text */}
-          <div style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(112,112,112,0.25)",
-            borderRadius: 10,
-            padding: "16px 18px",
-          }}>
-            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+          <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "4px 0" }} />
+          <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "16px 18px" }}>
+            <Text style={{ color: "rgba(0,0,0,0.8)", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
               {summary}
             </Text>
           </div>
-
-          <Text style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>
-            Generated by Gemini 1.5 Flash · Based on logged activities only
+          <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>
+            Generated by Llama 3.3 70B via Groq · Based on logged activities only
           </Text>
         </Flex>
       )}
@@ -575,12 +493,16 @@ Write a concise 3–5 sentence summary for a sales manager. Cover: what has happ
 
 // ── Pipeline Tab ──────────────────────────────────────────────────────────────
 const PipelineTab = ({ styles }: { styles: any }) => {
-  const state                 = useOpportunitiesState();
-  const { getPipeline }       = useOpportunitiesActions();
+  const state           = useOpportunitiesState();
+  const { getPipeline } = useOpportunitiesActions();
 
   useEffect(() => { getPipeline(); }, []);
 
   const pipeline = state.pipeline;
+  const colorMap: Record<string, string> = {
+    green: "#52c41a", red: "#ff4d4f", blue: "#1677ff",
+    gold: "#faad14", cyan: "#13c2c2", purple: "#722ed1",
+  };
 
   if (!pipeline) return (
     <Flex justify="center" style={{ padding: 48 }}>
@@ -590,13 +512,12 @@ const PipelineTab = ({ styles }: { styles: any }) => {
 
   return (
     <Flex vertical gap={20} style={{ padding: 16 }}>
-      {/* Summary row */}
       <Row gutter={16}>
         {[
           { label: "Total Opportunities", value: pipeline.totalOpportunities ?? 0 },
-          { label: "Pipeline Value",       value: formatValue(pipeline.totalPipelineValue) },
-          { label: "Weighted Value",       value: formatValue(pipeline.weightedPipelineValue) },
-          { label: "Win Rate",             value: `${(pipeline.winRate ?? 0).toFixed(1)}%` },
+          { label: "Pipeline Value",      value: formatValue(pipeline.totalPipelineValue) },
+          { label: "Weighted Value",      value: formatValue(pipeline.weightedPipelineValue) },
+          { label: "Win Rate",            value: `${(pipeline.winRate ?? 0).toFixed(1)}%` },
         ].map((stat) => (
           <Col span={6} key={stat.label}>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(112,112,112,0.3)", borderRadius: 10, padding: "14px 18px" }}>
@@ -609,11 +530,16 @@ const PipelineTab = ({ styles }: { styles: any }) => {
 
       <Divider style={{ borderColor: "rgba(112,112,112,0.25)", margin: "4px 0" }} />
 
-      {/* Stage breakdown */}
       <Row gutter={12}>
         {(pipeline.stages ?? []).map((s: any) => (
           <Col span={4} key={s.stage}>
-            <Flex vertical gap={10} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(112,112,112,0.3)`, borderRadius: 10, padding: "16px 14px", borderTop: `3px solid ${STAGES[s.stage]?.color === "green" ? "#52c41a" : STAGES[s.stage]?.color === "red" ? "#ff4d4f" : STAGES[s.stage]?.color === "blue" ? "#1677ff" : STAGES[s.stage]?.color === "gold" ? "#faad14" : STAGES[s.stage]?.color === "cyan" ? "#13c2c2" : "#722ed1"}` }}>
+            <Flex vertical gap={10} style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(112,112,112,0.3)",
+              borderRadius: 10,
+              padding: "16px 14px",
+              borderTop: `3px solid ${colorMap[STAGES[s.stage]?.color] ?? "#707070"}`,
+            }}>
               <Tag color={STAGES[s.stage]?.color} style={{ width: "fit-content", marginInlineEnd: 0 }}>
                 {STAGES[s.stage]?.label ?? `Stage ${s.stage}`}
               </Tag>
@@ -644,13 +570,13 @@ const OpportunitiesPage = () => {
   const { styles } = useOpportunitiesPageStyles();
   const state      = useOpportunitiesState();
   const {
-    getOpportunities, getMyOpportunities,
-    createOpportunity, updateOpportunity, moveStage, assignOpportunity, deleteOpportunity,
+    getOpportunities, getMyOpportunities, createOpportunity,
+    updateOpportunity, moveStage, assignOpportunity, deleteOpportunity,
   } = useOpportunitiesActions();
 
-  const [tab,        setTab]        = useState<TabKey>("all");
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize,   setPageSize]   = useState(10);
+  const [tab,             setTab]             = useState<TabKey>("all");
+  const [pageNumber,      setPageNumber]      = useState(1);
+  const [pageSize,        setPageSize]        = useState(4);
   const [showCreate,      setShowCreate]      = useState(false);
   const [editTarget,      setEditTarget]      = useState<Opportunity | null>(null);
   const [moveTarget,      setMoveTarget]      = useState<Opportunity | null>(null);
@@ -658,21 +584,17 @@ const OpportunitiesPage = () => {
   const [historyTarget,   setHistoryTarget]   = useState<string | null>(null);
   const [deleteTarget,    setDeleteTarget]    = useState<string | null>(null);
   const [summarizeTarget, setSummarizeTarget] = useState<Opportunity | null>(null);
-
-  // ── Filters ───────────────────────────────────────────────────────────────
-  const [searchTerm,   setSearchTerm]   = useState("");
-  const [stageFilter,  setStageFilter]  = useState<number | undefined>();
-  const [clientFilter, setClientFilter] = useState<string | undefined>();
+  const [searchTerm,      setSearchTerm]      = useState("");
+  const [stageFilter,     setStageFilter]     = useState<number | undefined>();
+  const [clientFilter,    setClientFilter]    = useState<string | undefined>();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Role check ────────────────────────────────────────────────────────────
-  const [canManage, setCanManage] = useState(false);
-  useEffect(() => {
-    const role = localStorage.getItem("user_role") ?? "";
-    setCanManage(["Admin", "SalesManager"].includes(role));
-  }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const canManage = mounted && ["Admin", "SalesManager"].some((r) =>
+    JSON.parse(localStorage.getItem("roles") ?? "[]").includes(r)
+  );
 
-  // ── Client dropdown for filter ────────────────────────────────────────────
   const clientsState   = useClientsState();
   const { getClients } = useClientsActions();
   useEffect(() => {
@@ -681,7 +603,13 @@ const OpportunitiesPage = () => {
   const clientOptions = clientsState.clients?.items ?? [];
 
   const load = (overrides?: object) => {
-    const query = { pageNumber, pageSize, searchTerm: searchTerm || undefined, stage: stageFilter, clientId: clientFilter, ...overrides };
+    const query = {
+      pageNumber, pageSize,
+      searchTerm: searchTerm || undefined,
+      stage: stageFilter,
+      clientId: clientFilter,
+      ...overrides,
+    };
     if (tab === "all")  getOpportunities(query);
     if (tab === "mine") getMyOpportunities({ pageNumber, pageSize, stage: stageFilter });
   };
@@ -698,49 +626,14 @@ const OpportunitiesPage = () => {
     }, 400);
   };
 
-  const handleStageFilter = (val: number) => {
-    setStageFilter(val);
-    setPageNumber(1);
-    load({ stage: val, pageNumber: 1 });
-  };
-
-  const handleClientFilter = (val: string) => {
-    setClientFilter(val);
-    setPageNumber(1);
-    load({ clientId: val, pageNumber: 1 });
-  };
-
   const data       = tab === "mine" ? state.myOpportunities : state.opportunities;
   const items      = useMemo(() => data?.items ?? [], [data]);
   const totalCount = data?.totalCount ?? 0;
 
-  const handleCreate = async (payload: CreateOpportunityPayload) => {
-    await createOpportunity(payload);
-    setShowCreate(false);
-    load();
-  };
-
-  const handleEdit = async (payload: CreateOpportunityPayload) => {
-    if (!editTarget) return;
-    await updateOpportunity(editTarget.id, payload);
-    setEditTarget(null);
-    load();
-  };
-
-  const handleMoveStage = async (id: string, payload: any) => {
-    await moveStage(id, payload);
-    setMoveTarget(null);
-    load();
-  };
-
-  const handleAssign = async (id: string, userId: string) => {
-    await assignOpportunity(id, userId);
-    setAssignTarget(null);
-    load();
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteOpportunity(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteOpportunity(deleteTarget);
+    setDeleteTarget(null);
     load();
   };
 
@@ -759,24 +652,18 @@ const OpportunitiesPage = () => {
       title: "Stage",
       dataIndex: "stage",
       render: (stage: number) => (
-        <Tag color={STAGES[stage]?.color} style={{ marginInlineEnd: 0 }}>
-          {STAGES[stage]?.label ?? stage}
-        </Tag>
+        <Tag color={STAGES[stage]?.color} style={{ marginInlineEnd: 0 }}>{STAGES[stage]?.label ?? stage}</Tag>
       ),
     },
     {
       title: "Source",
       dataIndex: "source",
-      render: (source: number) => (
-        <Text className={styles.cellMuted}>{SOURCES[source] ?? "—"}</Text>
-      ),
+      render: (source: number) => <Text className={styles.cellMuted}>{SOURCES[source] ?? "—"}</Text>,
     },
     {
       title: "Value",
       dataIndex: "estimatedValue",
-      render: (v: number, record) => (
-        <Text className={styles.cellPrimary}>{formatValue(v, record.currency)}</Text>
-      ),
+      render: (v: number, record) => <Text className={styles.cellPrimary}>{formatValue(v, record.currency)}</Text>,
     },
     {
       title: "Probability",
@@ -808,64 +695,23 @@ const OpportunitiesPage = () => {
       width: 60,
       render: (_: unknown, record: Opportunity) => {
         const menuItems = [
-          {
-            key: "edit",
-            label: "Edit",
-            icon: <EditOutlined />,
-            onClick: () => setEditTarget(record),
-          },
-          {
-            key: "move",
-            label: "Move Stage",
-            icon: <SwapOutlined />,
-            onClick: () => setMoveTarget(record),
-          },
-          {
-            key: "history",
-            label: "Stage History",
-            icon: <HistoryOutlined />,
-            onClick: () => setHistoryTarget(record.id),
-          },
-          {
-            key: "ai-summary",
-            label: "AI Activity Summary",
-            icon: <RobotOutlined />,
-            onClick: () => setSummarizeTarget(record),
-          },
+          { key: "edit",       label: "Edit",                icon: <EditOutlined />,    onClick: () => setEditTarget(record) },
+          { key: "move",       label: "Move Stage",          icon: <SwapOutlined />,    onClick: () => setMoveTarget(record) },
+          { key: "history",    label: "Stage History",       icon: <HistoryOutlined />, onClick: () => setHistoryTarget(record.id) },
+          { key: "ai-summary", label: "AI Activity Summary", icon: <RobotOutlined />,   onClick: () => setSummarizeTarget(record) },
           ...(canManage ? [
             { type: "divider" as const },
-            {
-              key: "assign",
-              label: "Assign",
-              icon: <UserSwitchOutlined />,
-              onClick: () => setAssignTarget(record),
-            },
+            { key: "assign", label: "Assign", icon: <UserSwitchOutlined />, onClick: () => setAssignTarget(record) },
             { type: "divider" as const },
-            {
-              key: "delete",
-              label: "Delete",
-              icon: <DeleteOutlined />,
-              danger: true,
-              onClick: () => setDeleteTarget(record.id),
-            },
+            { key: "delete", label: "Delete", icon: <DeleteOutlined />, danger: true, onClick: () => setDeleteTarget(record.id) },
           ] : []),
         ];
-
         return (
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={["click"]}
-            placement="bottomRight"
-          >
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">
             <Button
               size="small"
               icon={<MoreOutlined />}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(112,112,112,0.3)",
-                color: "rgba(255,255,255,0.7)",
-                boxShadow: "none",
-              }}
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.7)", boxShadow: "none" }}
             />
           </Dropdown>
         );
@@ -895,7 +741,6 @@ const OpportunitiesPage = () => {
   return (
     <Flex vertical className={styles.wrapper} gap={16}>
 
-      {/* Header */}
       <Flex justify="space-between" align="center">
         <Title level={3} className={styles.title}>Opportunities</Title>
         <Button icon={<PlusOutlined />} className={styles.primaryBtn} onClick={() => setShowCreate(true)}>
@@ -903,7 +748,6 @@ const OpportunitiesPage = () => {
         </Button>
       </Flex>
 
-      {/* Filters — hidden on pipeline tab */}
       {tab !== "pipeline" && (
         <Flex gap={12} wrap="wrap">
           <Input
@@ -918,8 +762,7 @@ const OpportunitiesPage = () => {
             placeholder="All Stages"
             allowClear
             value={stageFilter}
-            onChange={handleStageFilter}
-            onClear={() => { setStageFilter(undefined); load({ stage: undefined, pageNumber: 1 }); }}
+            onChange={(v) => { setStageFilter(v); setPageNumber(1); load({ stage: v, pageNumber: 1 }); }}
             style={{ width: 150 }}
           >
             {STAGE_OPTIONS.map((s) => <Option key={s.value} value={s.value}>{s.label}</Option>)}
@@ -930,8 +773,7 @@ const OpportunitiesPage = () => {
               showSearch
               allowClear
               value={clientFilter}
-              onChange={handleClientFilter}
-              onClear={() => { setClientFilter(undefined); load({ clientId: undefined, pageNumber: 1 }); }}
+              onChange={(v) => { setClientFilter(v); setPageNumber(1); load({ clientId: v, pageNumber: 1 }); }}
               optionFilterProp="children"
               style={{ width: 180 }}
             >
@@ -941,12 +783,17 @@ const OpportunitiesPage = () => {
         </Flex>
       )}
 
-      {/* Table / Pipeline */}
       <Card className={styles.card} variant="outlined">
         <Tabs
           className={styles.tabs}
           activeKey={tab}
-          onChange={(k) => { setTab(k as TabKey); setPageNumber(1); setSearchTerm(""); setStageFilter(undefined); setClientFilter(undefined); }}
+          onChange={(k) => {
+            setTab(k as TabKey);
+            setPageNumber(1);
+            setSearchTerm("");
+            setStageFilter(undefined);
+            setClientFilter(undefined);
+          }}
           items={[
             { key: "all",      label: "All Opportunities", children: <TableContent /> },
             { key: "mine",     label: "My Opportunities",  children: <TableContent /> },
@@ -959,58 +806,51 @@ const OpportunitiesPage = () => {
       <CreateModal
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        onSubmit={handleCreate}
+        onSubmit={async (p) => { await createOpportunity(p); setShowCreate(false); load(); }}
         isPending={state.isPending}
       />
-
       <CreateModal
         open={!!editTarget}
         onClose={() => setEditTarget(null)}
-        onSubmit={handleEdit}
+        onSubmit={async (p) => { if (editTarget) { await updateOpportunity(editTarget.id, p); setEditTarget(null); load(); } }}
         isPending={state.isPending}
         initial={editTarget}
       />
-
       <MoveStageModal
         opportunity={moveTarget}
         open={!!moveTarget}
         onClose={() => setMoveTarget(null)}
-        onSubmit={handleMoveStage}
+        onSubmit={async (id, p) => { await moveStage(id, p); setMoveTarget(null); load(); }}
         isPending={state.isPending}
       />
-
       <AssignModal
         opportunity={assignTarget}
         open={!!assignTarget}
         onClose={() => setAssignTarget(null)}
-        onSubmit={handleAssign}
+        onSubmit={async (id, userId) => { await assignOpportunity(id, userId); setAssignTarget(null); load(); }}
         isPending={state.isPending}
       />
-
       <StageHistoryModal
         opportunityId={historyTarget}
         open={!!historyTarget}
         onClose={() => setHistoryTarget(null)}
       />
-
       <AISummaryModal
         opportunity={summarizeTarget}
         open={!!summarizeTarget}
         onClose={() => setSummarizeTarget(null)}
       />
-
-      {/* Delete confirmation modal */}
       <Modal
         open={!!deleteTarget}
         onCancel={() => setDeleteTarget(null)}
-        onOk={async () => { await handleDelete(deleteTarget!); setDeleteTarget(null); }}
+        onOk={handleDelete}
         okText="Delete"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{ danger: true, loading: state.isPending }}
         cancelText="Cancel"
         title="Delete Opportunity"
         width={400}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+        <Text style={{ color: "rgba(0,0,0,0.65)" }}>
           Are you sure you want to delete this opportunity? This action cannot be undone.
         </Text>
       </Modal>

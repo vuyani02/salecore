@@ -18,37 +18,71 @@ export const useActivitiesPageStyles = createStyles(({ css }) => ({
     color: #ffffff !important;
     font-weight: 600;
 
-    &:hover,
-    &:focus {
+    &:hover, &:focus {
       background-color: #70707081 !important;
       color: #ffffff !important;
       border: none !important;
     }
   `,
 
+  searchInput: css`
+    background-color: #707070 !important;
+    border: none !important;
+    color: #ffffff !important;
+
+    input {
+      background-color: transparent !important;
+      color: #ffffff !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.35) !important;
+      }
+    }
+
+    .ant-input-clear-icon {
+      color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    &:hover, &:focus-within {
+      box-shadow: none !important;
+      background-color: #707070 !important;
+    }
+  `,
+
   filterSelect: css`
+    background-color: #707070 !important;
+    border: none !important;
+    border-radius: 6px !important;
+
     .ant-select-selector {
       background-color: #707070 !important;
       border: none !important;
+      outline: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
       color: #ffffff !important;
     }
 
     &:hover .ant-select-selector,
-    &.ant-select-focused .ant-select-selector {
-      background-color: #70707081 !important;
+    &.ant-select-focused .ant-select-selector,
+    &.ant-select-open .ant-select-selector {
+      background-color: #707070 !important;
       border: none !important;
+      outline: none !important;
       box-shadow: none !important;
-    }
-
-    .ant-select-arrow,
-    .ant-select-clear {
-      color: rgba(255, 255, 255, 0.7) !important;
     }
 
     .ant-select-selection-placeholder {
       color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    .ant-select-selection-item {
+      color: #ffffff !important;
+    }
+
+    .ant-select-arrow, .ant-select-clear {
+      color: rgba(255, 255, 255, 0.55) !important;
+      background: transparent !important;
     }
   `,
 
@@ -126,7 +160,6 @@ export const useActivitiesPageStyles = createStyles(({ css }) => ({
       color: rgba(255, 255, 255, 0.4) !important;
     }
 
-    /* ── Pagination ─────────────────────────────────────────────────────────── */
     .ant-pagination {
       padding: 16px !important;
       margin: 0 !important;
@@ -144,15 +177,11 @@ export const useActivitiesPageStyles = createStyles(({ css }) => ({
       box-shadow: none !important;
       border-radius: 6px !important;
 
-      a, button {
-        color: #ffffff !important;
-      }
+      a, button { color: #ffffff !important; }
 
-      &:hover,
-      &:focus {
+      &:hover, &:focus {
         background-color: #70707081 !important;
         border: none !important;
-
         a, button { color: #ffffff !important; }
       }
     }
@@ -178,12 +207,6 @@ export const useActivitiesPageStyles = createStyles(({ css }) => ({
       box-shadow: none !important;
       border-radius: 6px !important;
       color: #ffffff !important;
-    }
-
-    .ant-pagination .ant-select:hover .ant-select-selector,
-    .ant-pagination .ant-select:focus .ant-select-selector {
-      background-color: #70707081 !important;
-      border: none !important;
     }
 
     .ant-pagination .ant-select-arrow {

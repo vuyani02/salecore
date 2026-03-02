@@ -21,6 +21,10 @@ export enum ContactsActionEnums {
   deleteContactPending = "DELETE_CONTACT_PENDING",
   deleteContactSuccess = "DELETE_CONTACT_SUCCESS",
   deleteContactError   = "DELETE_CONTACT_ERROR",
+
+  setPrimaryContactPending = "SET_PRIMARY_CONTACT_PENDING",
+  setPrimaryContactSuccess = "SET_PRIMARY_CONTACT_SUCCESS",
+  setPrimaryContactError   = "SET_PRIMARY_CONTACT_ERROR",
 }
 
 const pending = (type: string) =>
@@ -68,3 +72,11 @@ export const deleteContactSuccess = createAction<IContactsStateContext, string>(
   (deletedContactId) => ({ isPending: false, isSuccess: true, isError: false, deletedContactId })
 );
 export const deleteContactError = error(ContactsActionEnums.deleteContactError);
+
+// ── Set Primary ───────────────────────────────────────────────────────────────
+export const setPrimaryContactPending = pending(ContactsActionEnums.setPrimaryContactPending);
+export const setPrimaryContactSuccess = createAction<IContactsStateContext, IContact>(
+  ContactsActionEnums.setPrimaryContactSuccess,
+  (updatedContact) => ({ isPending: false, isSuccess: true, isError: false, updatedContact })
+);
+export const setPrimaryContactError = error(ContactsActionEnums.setPrimaryContactError);

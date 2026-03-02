@@ -10,7 +10,8 @@ export type PipelineTone =
   | "qualified"
   | "proposal"
   | "negotiation"
-  | "won";
+  | "won"
+  | "lost";
 
 export type PipelineStage = {
   name: string;
@@ -20,9 +21,10 @@ export type PipelineStage = {
 
 type PipelineCardProps = {
   stages: PipelineStage[];
+  weightedPipelineValue?: string;
 };
 
-export default function PipelineCard({ stages }: PipelineCardProps) {
+export default function PipelineCard({ stages, weightedPipelineValue }: PipelineCardProps) {
   const { styles } = usePipelineCardStyles();
 
   const totalCount = stages.reduce((acc, s) => acc + s.count, 0);
@@ -30,15 +32,24 @@ export default function PipelineCard({ stages }: PipelineCardProps) {
   return (
     <Card className={styles.card} variant="outlined">
       <Flex vertical gap={16}>
-        <Title level={4} className={styles.title}>
-          Pipeline Stages
-        </Title>
 
+        {/* Header row — title + weighted value */}
+        <Flex justify="space-between" align="center">
+          <Title level={4} className={styles.title}>
+            Pipeline Stages
+          </Title>
+          {weightedPipelineValue && (
+            <Flex vertical align="flex-end" className={styles.weightedContainer}>
+              <Text className={styles.weightedLabel}>Weighted Pipeline Value</Text>
+              <Text className={styles.weightedValue}>{weightedPipelineValue}</Text>
+            </Flex>
+          )}
+        </Flex>
+
+        {/* Progress bar */}
         <Flex className={styles.bar}>
           {stages.map(({ name, tone, count }) => {
-            const width =
-              totalCount > 0 ? `${(count / totalCount) * 100}%` : "0%";
-
+            const width = totalCount > 0 ? `${(count / totalCount) * 100}%` : "0%";
             return (
               <div
                 key={name}
@@ -49,6 +60,7 @@ export default function PipelineCard({ stages }: PipelineCardProps) {
           })}
         </Flex>
 
+        {/* Legend */}
         <Flex wrap gap={20}>
           {stages.map(({ name, count, tone }) => (
             <Flex key={name} align="center" gap={8}>
@@ -60,6 +72,7 @@ export default function PipelineCard({ stages }: PipelineCardProps) {
             </Flex>
           ))}
         </Flex>
+
       </Flex>
     </Card>
   );

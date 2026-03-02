@@ -45,6 +45,7 @@ export interface IProposalsQuery {
   opportunityId?: string;
   status?: number;
   pageNumber?: number;
+  searchTerm?: string;
   pageSize?: number;
 }
 

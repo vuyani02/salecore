@@ -31,6 +31,7 @@ export const usePipelineCardStyles = createStyles(({ css }) => ({
     height: 10px;
     border-radius: 50%;
     display: inline-block;
+    flex-shrink: 0;
   `,
   prospect: css`
     background: #7a3db8;
@@ -47,6 +48,9 @@ export const usePipelineCardStyles = createStyles(({ css }) => ({
   won: css`
     background: #2ecc71;
   `,
+  lost: css`
+    background: #e74c3c;
+  `,
   legendText: css`
     color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
@@ -54,5 +58,22 @@ export const usePipelineCardStyles = createStyles(({ css }) => ({
   legendCount: css`
     color: rgba(255, 255, 255, 0.9);
     font-weight: 700;
+  `,
+  weightedLabel: css`
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  `,
+  weightedValue: css`
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 15px;
+    font-weight: 700;
+  `,
+  weightedContainer: css`
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(112, 112, 112, 0.3);
+    border-radius: 6px;
+    padding: 8px 14px;
   `,
 }));

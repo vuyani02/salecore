@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Button, Card, Col, Divider, Flex, Form,
-  Input, Modal, Popconfirm, Row, Select,
-  Table, Tag, Typography, Upload,
+  Button, Card, Col, Descriptions, Divider, Dropdown, Flex, Form,
+  Input, Modal, Row, Select, Table, Tag, Typography, Upload,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { UploadFile } from "antd/es/upload/interface";
 import {
-  DeleteOutlined, DownloadOutlined, InboxOutlined, PlusOutlined,
+  PlusOutlined, MoreOutlined, DownloadOutlined, DeleteOutlined,
+  EyeOutlined, SearchOutlined, InboxOutlined,
   FileTextOutlined, FilePdfOutlined, FileImageOutlined,
   FileExcelOutlined, FileWordOutlined, FileUnknownOutlined,
 } from "@ant-design/icons";
@@ -34,22 +34,23 @@ const formatBytes = (bytes?: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const FileIcon = ({ contentType }: { contentType?: string }) => {
+const FileIcon = ({ contentType, size = 16 }: { contentType?: string; size?: number }) => {
   const t = contentType ?? "";
-  if (t.includes("pdf"))                              return <FilePdfOutlined style={{ color: "#ff4d4f" }} />;
-  if (t.includes("image"))                            return <FileImageOutlined style={{ color: "#4096ff" }} />;
-  if (t.includes("sheet") || t.includes("excel"))    return <FileExcelOutlined style={{ color: "#52c41a" }} />;
-  if (t.includes("word") || t.includes("document"))  return <FileWordOutlined style={{ color: "#1677ff" }} />;
-  if (t.includes("text"))                             return <FileTextOutlined style={{ color: "rgba(255,255,255,0.5)" }} />;
-  return <FileUnknownOutlined style={{ color: "rgba(255,255,255,0.35)" }} />;
+  const style = { fontSize: size };
+  if (t.includes("pdf"))                             return <FilePdfOutlined    style={{ ...style, color: "#ff4d4f" }} />;
+  if (t.includes("image"))                           return <FileImageOutlined  style={{ ...style, color: "#4096ff" }} />;
+  if (t.includes("sheet") || t.includes("excel"))   return <FileExcelOutlined  style={{ ...style, color: "#52c41a" }} />;
+  if (t.includes("word") || t.includes("document")) return <FileWordOutlined   style={{ ...style, color: "#1677ff" }} />;
+  if (t.includes("text"))                            return <FileTextOutlined   style={{ ...style, color: "rgba(255,255,255,0.5)" }} />;
+  return <FileUnknownOutlined style={{ ...style, color: "rgba(255,255,255,0.35)" }} />;
 };
 
 const CATEGORY_COLORS: Record<number, string> = {
-  1: "blue",
-  2: "green",
-  3: "purple",
-  4: "orange",
-  5: "default",
+  1: "blue", 2: "green", 3: "purple", 4: "orange", 5: "default",
+};
+
+const BROWSABLE_TYPES: Record<number, string> = {
+  1: "Client", 2: "Opportunity", 3: "Proposal", 4: "Contract",
 };
 
 // ── Section Label ─────────────────────────────────────────────────────────────
@@ -63,23 +64,22 @@ const SectionLabel = ({ step, title, subtitle }: { step: number; title: string; 
       {step}
     </span>
     <Flex vertical gap={1}>
-      <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 13 }}>{title}</Text>
-      <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>{subtitle}</Text>
+      <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 13 }}>{title}</Text>
+      <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 11 }}>{subtitle}</Text>
     </Flex>
   </Flex>
 );
 
-
-// ── Entity options hook — loads the right records when relatedToType changes ──
+// ── Entity options hook ───────────────────────────────────────────────────────
 const useEntityOptions = (relatedToType: number | undefined) => {
-  const clientsState       = useClientsState();
-  const { getClients }     = useClientsActions();
-  const oppsState          = useOpportunitiesState();
+  const clientsState         = useClientsState();
+  const { getClients }       = useClientsActions();
+  const oppsState            = useOpportunitiesState();
   const { getOpportunities } = useOpportunitiesActions();
-  const proposalsState     = useProposalsState();
-  const { getProposals }   = useProposalsActions();
-  const contractsState     = useContractsState();
-  const { getContracts }   = useContractsActions();
+  const proposalsState       = useProposalsState();
+  const { getProposals }     = useProposalsActions();
+  const contractsState       = useContractsState();
+  const { getContracts }     = useContractsActions();
 
   useEffect(() => {
     if (relatedToType === 1) getClients({ pageNumber: 1, pageSize: 100 });
@@ -93,35 +93,112 @@ const useEntityOptions = (relatedToType: number | undefined) => {
     proposalsState.isPending || contractsState.isPending;
 
   const options: { label: string; value: string }[] = useMemo(() => {
-    if (relatedToType === 1)
-      return (clientsState.clients?.items ?? []).map((c) => ({ label: c.name, value: c.id }));
-    if (relatedToType === 2)
-      return (oppsState.opportunities?.items ?? []).map((o) => ({ label: o.title, value: o.id }));
-    if (relatedToType === 3)
-      return (proposalsState.proposals?.items ?? []).map((p) => ({ label: p.title, value: p.id }));
-    if (relatedToType === 4)
-      return (contractsState.contracts?.items ?? []).map((c) => ({ label: c.title, value: c.id }));
+    if (relatedToType === 1) return (clientsState.clients?.items ?? []).map((c) => ({ label: c.name, value: c.id }));
+    if (relatedToType === 2) return (oppsState.opportunities?.items ?? []).map((o) => ({ label: o.title, value: o.id }));
+    if (relatedToType === 3) return (proposalsState.proposals?.items ?? []).map((p) => ({ label: p.title, value: p.id }));
+    if (relatedToType === 4) return (contractsState.contracts?.items ?? []).map((c) => ({ label: c.title, value: c.id }));
     return [];
   }, [relatedToType, clientsState.clients, oppsState.opportunities, proposalsState.proposals, contractsState.contracts]);
 
   return { options, isLoading };
 };
 
+// ── View Modal ────────────────────────────────────────────────────────────────
+const ViewModal = ({ document, open, onClose, onDownload }: {
+  document: IDocument | null; open: boolean; onClose: () => void;
+  onDownload: () => void;
+}) => {
+  if (!document) return null;
+  const cat = DOCUMENT_CATEGORY[document.category];
+
+  return (
+    <Modal
+      open={open}
+      onCancel={onClose}
+      destroyOnHidden
+      width={500}
+      footer={
+        <Flex justify="flex-end" gap={8}>
+          <Button onClick={onClose}>Close</Button>
+          <Button
+            icon={<DownloadOutlined />}
+            style={{ backgroundColor: "#707070", border: "none", color: "#fff", boxShadow: "none" }}
+            onClick={() => { onDownload(); onClose(); }}
+          >
+            Download
+          </Button>
+        </Flex>
+      }
+      title={
+        <Flex align="center" gap={12}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 10,
+            background: "rgba(112,112,112,0.2)", border: "1px solid rgba(112,112,112,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <FileIcon contentType={document.contentType} size={20} />
+          </div>
+          <Flex vertical gap={4}>
+            <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 15, fontWeight: 700 }}>{document.fileName}</Text>
+            {cat && (
+              <Tag color={CATEGORY_COLORS[document.category]} style={{ marginInlineEnd: 0, width: "fit-content" }}>
+                {cat.label}
+              </Tag>
+            )}
+          </Flex>
+        </Flex>
+      }
+    >
+      <Descriptions
+        column={2}
+        size="small"
+        style={{ marginTop: 8 }}
+        labelStyle={{ color: "rgba(0,0,0,0.45)", fontSize: 12 }}
+        contentStyle={{ color: "rgba(0,0,0,0.85)", fontSize: 13, fontWeight: 600 }}
+      >
+        <Descriptions.Item label="Size">{formatBytes(document.fileSize)}</Descriptions.Item>
+        <Descriptions.Item label="Uploaded By">{document.uploadedByName ?? "—"}</Descriptions.Item>
+        <Descriptions.Item label="Date">
+          {document.createdAt ? dayjs(document.createdAt).format("DD MMM YYYY") : "—"}
+        </Descriptions.Item>
+        <Descriptions.Item label="Related To">
+          {RELATED_TO_TYPE[document.relatedToType]?.label ?? "—"}
+        </Descriptions.Item>
+      </Descriptions>
+
+      {document.description && (
+        <>
+          <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "12px 0" }} />
+          <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", display: "block", marginBottom: 6 }}>
+            Description
+          </Text>
+          <Text style={{ color: "rgba(0,0,0,0.7)", fontSize: 13 }}>{document.description}</Text>
+        </>
+      )}
+    </Modal>
+  );
+};
+
 // ── Upload Modal ──────────────────────────────────────────────────────────────
-interface IUploadModalProps {
-  open: boolean;
-  onClose: () => void;
+const UploadModal = ({ open, onClose, onSubmit, isPending }: {
+  open: boolean; onClose: () => void;
   onSubmit: (payload: IUploadDocumentPayload) => void;
   isPending: boolean;
-}
-
-const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) => {
-  const [form]           = Form.useForm();
-  const [selectedFile,   setSelectedFile]   = useState<File | null>(null);
-  const [fileList,       setFileList]       = useState<UploadFile[]>([]);
-  const [relatedToType,  setRelatedToType]  = useState<number | undefined>();
+}) => {
+  const [form]          = Form.useForm();
+  const [selectedFile,  setSelectedFile]  = useState<File | null>(null);
+  const [fileList,      setFileList]      = useState<UploadFile[]>([]);
+  const [relatedToType, setRelatedToType] = useState<number | undefined>();
 
   const { options, isLoading } = useEntityOptions(relatedToType);
+
+  const handleClose = () => {
+    form.resetFields();
+    setSelectedFile(null);
+    setFileList([]);
+    setRelatedToType(undefined);
+    onClose();
+  };
 
   const handleFinish = (values: any) => {
     if (!selectedFile) return;
@@ -138,31 +215,12 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
     setRelatedToType(undefined);
   };
 
-  const handleClose = () => {
-    form.resetFields();
-    setSelectedFile(null);
-    setFileList([]);
-    setRelatedToType(undefined);
-    onClose();
-  };
-
-  const handleRelatedToTypeChange = (v: number) => {
-    setRelatedToType(v);
-    form.setFieldValue("relatedToId", undefined);
-  };
-
-  // Only show entity types that have browsable records (Activity not included
-  // since the API docs don't list an /api/activities list by relatedToId for documents)
-  const BROWSABLE_TYPES = { 1: "Client", 2: "Opportunity", 3: "Proposal", 4: "Contract" };
-
   return (
     <Modal
       title={
         <Flex vertical gap={2}>
-          <Text style={{ color: "rgba(255,255,255,0.95)", fontSize: 16, fontWeight: 700 }}>
-            Upload Document
-          </Text>
-          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400 }}>
+          <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 16, fontWeight: 700 }}>Upload Document</Text>
+          <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 12, fontWeight: 400 }}>
             Fields marked <span style={{ color: "#ff4d4f" }}>*</span> are required
           </Text>
         </Flex>
@@ -175,7 +233,7 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
     >
       <Form form={form} layout="vertical" onFinish={handleFinish}>
 
-        <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "8px 0 16px" }} />
+        <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "8px 0 16px" }} />
         <SectionLabel step={1} title="Select File" subtitle="Choose a file to upload — max 50 MB" />
 
         <Form.Item required>
@@ -189,41 +247,26 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
             onRemove={() => { setSelectedFile(null); setFileList([]); }}
             maxCount={1}
           >
-            <Flex
-              align="center"
-              justify="center"
-              vertical
-              gap={8}
-              style={{
-                width: "100%",
-                padding: "24px 16px",
-                background: "rgba(255,255,255,0.02)",
-                border: "1px dashed rgba(112,112,112,0.45)",
-                borderRadius: 10,
-                cursor: "pointer",
-              }}
-            >
-              <InboxOutlined style={{ fontSize: 36, color: "rgba(255,255,255,0.3)" }} />
-              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14 }}>
-                Click to select a file
-              </Text>
-              <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
+            <Flex align="center" justify="center" vertical gap={8} style={{
+              width: "100%", padding: "24px 16px",
+              background: "rgba(0,0,0,0.02)", border: "1px dashed rgba(0,0,0,0.15)",
+              borderRadius: 10, cursor: "pointer",
+            }}>
+              <InboxOutlined style={{ fontSize: 36, color: "rgba(0,0,0,0.25)" }} />
+              <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 14 }}>Click to select a file</Text>
+              <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 12 }}>
                 Supports PDF, Word, Excel, images and more. Max 50 MB.
               </Text>
             </Flex>
           </Upload>
         </Form.Item>
 
-        <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0 16px" }} />
+        <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "4px 0 16px" }} />
         <SectionLabel step={2} title="Categorise" subtitle="What type of document is this and where does it belong?" />
 
         <Row gutter={12}>
           <Col span={12}>
-            <Form.Item
-              name="category"
-              label="Category"
-              rules={[{ required: true, message: "Required" }]}
-            >
+            <Form.Item name="category" label="Category" rules={[{ required: true, message: "Required" }]}>
               <Select placeholder="Select category…">
                 {Object.entries(DOCUMENT_CATEGORY).map(([k, v]) => (
                   <Option key={k} value={Number(k)}>{v.label}</Option>
@@ -236,11 +279,11 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
               name="relatedToType"
               label="Attach To"
               rules={[{ required: true, message: "Required" }]}
-              extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>What kind of record is this for?</Text>}
+              extra={<Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 11 }}>What kind of record is this for?</Text>}
             >
               <Select
                 placeholder="Select record type…"
-                onChange={handleRelatedToTypeChange}
+                onChange={(v) => { setRelatedToType(v); form.setFieldValue("relatedToId", undefined); }}
               >
                 {Object.entries(BROWSABLE_TYPES).map(([k, v]) => (
                   <Option key={k} value={Number(k)}>{v}</Option>
@@ -255,11 +298,11 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
           label="Select Record"
           rules={[{ required: true, message: "Please select a record" }]}
           extra={
-            !relatedToType
-              ? <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Choose a record type first</Text>
-              : <Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>
-                  Select the {BROWSABLE_TYPES[relatedToType as keyof typeof BROWSABLE_TYPES]} this document belongs to
-                </Text>
+            <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 11 }}>
+              {!relatedToType
+                ? "Choose a record type first"
+                : `Select the ${BROWSABLE_TYPES[relatedToType]} this document belongs to`}
+            </Text>
           }
         >
           <Select
@@ -273,74 +316,34 @@ const UploadModal = ({ open, onClose, onSubmit, isPending }: IUploadModalProps) 
           />
         </Form.Item>
 
-        <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0 16px" }} />
+        <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "4px 0 16px" }} />
         <SectionLabel step={3} title="Description" subtitle="Optional — add context about this document" />
 
         <Form.Item
           name="description"
           label="Description"
-          extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Optional — e.g. "Signed version received 28 Feb 2026"</Text>}
+          extra={<Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 11 }}>Optional — e.g. "Signed version received 28 Feb 2026"</Text>}
         >
           <Input.TextArea rows={2} placeholder="Brief description of this document…" />
         </Form.Item>
 
-        <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "20px 0 16px" }} />
-        <Flex justify="space-between" align="center">
-          <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-            Document will be stored and linked to the selected record.
-          </Text>
-          <Flex gap={8}>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button
-              style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
-              htmlType="submit"
-              loading={isPending}
-              disabled={!selectedFile}
-            >
-              Upload
-            </Button>
-          </Flex>
+        <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "20px 0 16px" }} />
+        <Flex justify="flex-end" gap={8}>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            style={{ backgroundColor: "#707070", border: "none", color: "#fff", fontWeight: 600, boxShadow: "none" }}
+            htmlType="submit"
+            loading={isPending}
+            disabled={!selectedFile}
+          >
+            Upload
+          </Button>
         </Flex>
 
       </Form>
     </Modal>
   );
 };
-
-// ── Filters ───────────────────────────────────────────────────────────────────
-interface IFiltersProps {
-  categoryFilter: number | undefined;
-  relatedToTypeFilter: number | undefined;
-  onCategoryChange: (v: number | undefined) => void;
-  onRelatedToTypeChange: (v: number | undefined) => void;
-}
-
-const Filters = ({ categoryFilter, relatedToTypeFilter, onCategoryChange, onRelatedToTypeChange }: IFiltersProps) => (
-  <Flex gap={12}>
-    <Select
-      placeholder="All Categories"
-      allowClear
-      value={categoryFilter}
-      onChange={onCategoryChange}
-      style={{ minWidth: 160 }}
-    >
-      {Object.entries(DOCUMENT_CATEGORY).map(([k, v]) => (
-        <Option key={k} value={Number(k)}>{v.label}</Option>
-      ))}
-    </Select>
-    <Select
-      placeholder="All Entity Types"
-      allowClear
-      value={relatedToTypeFilter}
-      onChange={onRelatedToTypeChange}
-      style={{ minWidth: 170 }}
-    >
-      {Object.entries(RELATED_TO_TYPE).map(([k, v]) => (
-        <Option key={k} value={Number(k)}>{v.label}</Option>
-      ))}
-    </Select>
-  </Flex>
-);
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 const DocumentsPage = () => {
@@ -349,10 +352,16 @@ const DocumentsPage = () => {
   const { getDocuments, uploadDocument, downloadDocument, deleteDocument } = useDocumentsActions();
 
   const [pageNumber,          setPageNumber]          = useState(1);
-  const [pageSize,            setPageSize]            = useState(10);
-  const [showUpload,          setShowUpload]          = useState(false);
+  const [pageSize,            setPageSize]            = useState(5);
+  const [searchTerm,          setSearchTerm]          = useState("");
   const [categoryFilter,      setCategoryFilter]      = useState<number | undefined>();
   const [relatedToTypeFilter, setRelatedToTypeFilter] = useState<number | undefined>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [showUpload,    setShowUpload]    = useState(false);
+  const [viewTarget,    setViewTarget]    = useState<IDocument | null>(null);
+  const [deleteTarget,  setDeleteTarget]  = useState<string | null>(null);
+  const [deleteFileName, setDeleteFileName] = useState("");
 
   const buildQuery = (page = pageNumber, size = pageSize): IDocumentsQuery => ({
     pageNumber: page,
@@ -362,13 +371,30 @@ const DocumentsPage = () => {
   });
 
   useEffect(() => { getDocuments({ pageNumber: 1, pageSize: 10 }); }, []);
+  useEffect(() => { getDocuments(buildQuery()); }, [pageNumber, pageSize, categoryFilter, relatedToTypeFilter]);
 
-  useEffect(() => {
-    getDocuments(buildQuery());
-  }, [pageNumber, pageSize, categoryFilter, relatedToTypeFilter]);
-
-  const items      = useMemo(() => state.documents?.items ?? [], [state.documents]);
+  const allItems   = useMemo(() => state.documents?.items ?? [], [state.documents]);
   const totalCount = state.documents?.totalCount ?? 0;
+
+  // Client-side search filter
+  const items = useMemo(() => {
+    if (!searchTerm.trim()) return allItems;
+    const q = searchTerm.toLowerCase();
+    return allItems.filter((d) =>
+      d.fileName?.toLowerCase().includes(q) ||
+      d.description?.toLowerCase().includes(q) ||
+      d.uploadedByName?.toLowerCase().includes(q)
+    );
+  }, [allItems, searchTerm]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPageNumber(1);
+      getDocuments(buildQuery(1, pageSize));
+    }, 400);
+  };
 
   const refresh = () => getDocuments(buildQuery());
 
@@ -378,8 +404,11 @@ const DocumentsPage = () => {
     refresh();
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteDocument(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteDocument(deleteTarget);
+    setDeleteTarget(null);
+    setDeleteFileName("");
     refresh();
   };
 
@@ -438,30 +467,46 @@ const DocumentsPage = () => {
     {
       title: "Actions",
       key: "actions",
-      render: (_: unknown, record: IDocument) => (
-        <Flex gap={6} justify="flex-end">
-          <Button
-            size="small"
-            icon={<DownloadOutlined />}
-            onClick={() => downloadDocument(record.id, record.fileName)}
-            style={{ backgroundColor: "#707070", border: "none", color: "#fff", boxShadow: "none" }}
-          >
-            Download
-          </Button>
-          <Popconfirm
-            title="Delete this document?"
-            description="This action cannot be undone."
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button size="small" danger icon={<DeleteOutlined />} style={{ boxShadow: "none" }}>
-              Delete
-            </Button>
-          </Popconfirm>
-        </Flex>
-      ),
+      width: 60,
+      render: (_: unknown, record: IDocument) => {
+        const menuItems = [
+          {
+            key: "view",
+            label: "View Details",
+            icon: <EyeOutlined />,
+            onClick: () => setViewTarget(record),
+          },
+          {
+            key: "download",
+            label: "Download",
+            icon: <DownloadOutlined />,
+            onClick: () => downloadDocument(record.id, record.fileName),
+          },
+          { type: "divider" as const },
+          {
+            key: "delete",
+            label: "Delete",
+            icon: <DeleteOutlined />,
+            danger: true,
+            onClick: () => { setDeleteTarget(record.id); setDeleteFileName(record.fileName); },
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">
+            <Button
+              size="small"
+              icon={<MoreOutlined />}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(112,112,112,0.3)",
+                color: "rgba(255,255,255,0.7)",
+                boxShadow: "none",
+              }}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -477,12 +522,41 @@ const DocumentsPage = () => {
       </Flex>
 
       {/* Filters */}
-      <Filters
-        categoryFilter={categoryFilter}
-        relatedToTypeFilter={relatedToTypeFilter}
-        onCategoryChange={(v) => { setCategoryFilter(v); setPageNumber(1); }}
-        onRelatedToTypeChange={(v) => { setRelatedToTypeFilter(v); setPageNumber(1); }}
-      />
+      <Flex gap={12} wrap="wrap">
+        <Input
+          prefix={<SearchOutlined style={{ color: "rgba(255,255,255,0.3)" }} />}
+          placeholder="Search by filename, uploader..."
+          className={styles.searchInput}
+          value={searchTerm}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          allowClear
+          style={{ width: 260 }}
+        />
+        <Select
+          className={styles.filterSelect}
+          placeholder="All Categories"
+          allowClear
+          value={categoryFilter}
+          onChange={(v) => { setCategoryFilter(v); setPageNumber(1); }}
+          style={{ minWidth: 160 }}
+        >
+          {Object.entries(DOCUMENT_CATEGORY).map(([k, v]) => (
+            <Option key={k} value={Number(k)}>{v.label}</Option>
+          ))}
+        </Select>
+        <Select
+          className={styles.filterSelect}
+          placeholder="All Entity Types"
+          allowClear
+          value={relatedToTypeFilter}
+          onChange={(v) => { setRelatedToTypeFilter(v); setPageNumber(1); }}
+          style={{ minWidth: 170 }}
+        >
+          {Object.entries(RELATED_TO_TYPE).map(([k, v]) => (
+            <Option key={k} value={Number(k)}>{v.label}</Option>
+          ))}
+        </Select>
+      </Flex>
 
       {/* Table */}
       <Card className={styles.card} variant="outlined">
@@ -505,6 +579,14 @@ const DocumentsPage = () => {
         />
       </Card>
 
+      {/* View Modal */}
+      <ViewModal
+        document={viewTarget}
+        open={!!viewTarget}
+        onClose={() => setViewTarget(null)}
+        onDownload={() => viewTarget && downloadDocument(viewTarget.id, viewTarget.fileName)}
+      />
+
       {/* Upload Modal */}
       <UploadModal
         open={showUpload}
@@ -512,6 +594,21 @@ const DocumentsPage = () => {
         onSubmit={handleUpload}
         isPending={state.isPending}
       />
+
+      {/* Delete confirmation */}
+      <Modal
+        open={!!deleteTarget}
+        onCancel={() => { setDeleteTarget(null); setDeleteFileName(""); }}
+        onOk={handleDelete}
+        okText="Delete"
+        okButtonProps={{ danger: true, loading: state.isPending }}
+        title="Delete Document"
+        width={420}
+      >
+        <Text style={{ color: "rgba(0,0,0,0.65)" }}>
+          Are you sure you want to delete <strong>{deleteFileName}</strong>? This action cannot be undone.
+        </Text>
+      </Modal>
 
     </Flex>
   );

@@ -34,6 +34,7 @@ export const ClientsProvider = ({ children }: { children: React.ReactNode }) => 
       .get<ClientPagedResult>("/api/clients", { params: query })
       .then((response) => {
         dispatch(getClientsSuccess(response.data))
+        console.log(response.data)
       })
       .catch(() => {
         dispatch(getClientsError());

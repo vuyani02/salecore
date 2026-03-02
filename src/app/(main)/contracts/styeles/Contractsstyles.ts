@@ -27,28 +27,48 @@ export const useContractsPageStyles = createStyles(({ css }) => ({
   `,
 
   filterSelect: css`
+    background-color: #707070 !important;
+    border: none !important;
+    border-radius: 6px !important;
+
     .ant-select-selector {
       background-color: #707070 !important;
       border: none !important;
+      outline: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
       color: #ffffff !important;
     }
 
     &:hover .ant-select-selector,
-    &.ant-select-focused .ant-select-selector {
-      background-color: #70707081 !important;
+    &.ant-select-focused .ant-select-selector,
+    &.ant-select-open .ant-select-selector,
+    .ant-select-selector:focus,
+    .ant-select-selector:focus-within,
+    .ant-select-selector:focus-visible {
+      background-color: #707070 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-color: transparent !important;
+    }
+
+    &.ant-select:not(.ant-select-disabled):not(.ant-select-customize-input):not(.ant-pagination-size-changer) .ant-select-selector {
       border: none !important;
       box-shadow: none !important;
     }
 
-    .ant-select-arrow,
-    .ant-select-clear {
-      color: rgba(255, 255, 255, 0.7) !important;
-    }
-
     .ant-select-selection-placeholder {
       color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    .ant-select-selection-item {
+      color: #ffffff !important;
+    }
+
+    .ant-select-arrow, .ant-select-clear {
+      color: rgba(255, 255, 255, 0.55) !important;
+      background: transparent !important;
     }
   `,
 
@@ -145,7 +165,7 @@ export const useContractsPageStyles = createStyles(({ css }) => ({
     .ant-pagination-item,
     .ant-pagination-prev .ant-pagination-item-link,
     .ant-pagination-next .ant-pagination-item-link {
-      background-color: rgba(255, 255, 255, 0.06) !important;
+      background-color: #707070 !important;
       border: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
