@@ -20,6 +20,7 @@ import {
   createContactPending, createContactSuccess, createContactError,
   updateContactPending, updateContactSuccess, updateContactError,
   deleteContactPending, deleteContactSuccess, deleteContactError,
+  setPrimaryContactPending, setPrimaryContactSuccess, setPrimaryContactError,
 } from "./actions";
 
 export const ContactsProvider = ({ children }: { children: React.ReactNode }) => {
@@ -66,12 +67,21 @@ export const ContactsProvider = ({ children }: { children: React.ReactNode }) =>
       .catch(() => { dispatch(deleteContactError()); message.error("Failed to delete contact"); });
   };
 
+  const setPrimaryContact = async (id: string) => {
+    dispatch(setPrimaryContactPending());
+    await instance
+      .put<IContact>(`/api/contacts/${id}/set-primary`)
+      .then((res) => { dispatch(setPrimaryContactSuccess(res.data)); message.success("Primary contact updated"); })
+      .catch(() => { dispatch(setPrimaryContactError()); message.error("Failed to set primary contact"); });
+  };
+
   const actions: IContactsActionContext = {
     getContacts,
     getContact,
     createContact,
     updateContact,
     deleteContact,
+    setPrimaryContact,
   };
 
   return (

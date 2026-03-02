@@ -8,10 +8,10 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 import { getAxiosInstance } from "@/util/axiosInstance";
-import type { DashboardOverview } from "@/types/dashboard";
 import type {
   SalesPerformanceResponse,
   SalesPerformanceTopPerformer,
+  DashboardOverview
 } from "@/types/dashboard";
 import StatCard from "../../../components/statcard/StatCard";
 import PipelineCard from "../../../components/pipelinecard/PipelineCard";
@@ -21,7 +21,7 @@ import { useDashboardPageStyles } from "./styles/dashboardPageStyle";
 import OpportunitiesCard from "@/components/opportunitiescard/Opportunitiescard";
 import TopSalesRepsCard from "@/components/topsalesrepscard/topsalesrepscard";
 
-type PipelineTone = "prospect" | "qualified" | "proposal" | "negotiation" | "won";
+type PipelineTone = "prospect" | "qualified" | "proposal" | "negotiation" | "won" | "lost";
 
 const stageToneMap: Record<number, PipelineTone> = {
   1: "prospect",
@@ -29,6 +29,7 @@ const stageToneMap: Record<number, PipelineTone> = {
   3: "proposal",
   4: "negotiation",
   5: "won",
+  6: "lost",
 };
 
 const formatMoney = (value: number) => {
@@ -59,7 +60,6 @@ const DashboardPage = () => {
         message.error("Failed to load dashboard");
       }
     };
-
     load();
   }, []);
 
@@ -75,7 +75,6 @@ const DashboardPage = () => {
         setTopReps([]);
       }
     };
-
     loadTop();
   }, []);
 
@@ -83,7 +82,7 @@ const DashboardPage = () => {
     if (!data?.pipeline?.stages?.length) return [];
 
     return data.pipeline.stages
-      .filter((s) => s.stage >= 1 && s.stage <= 5)
+      .filter((s) => s.stage >= 1 && s.stage <= 6)
       .map((s) => ({
         name: s.stageName,
         count: s.count,
@@ -154,7 +153,10 @@ const DashboardPage = () => {
 
       <Row gutter={[16, 16]} className={styles.section}>
         <Col span={24}>
-          <PipelineCard stages={pipelineStages} />
+          <PipelineCard
+            stages={pipelineStages}
+            weightedPipelineValue={formatMoney(data?.pipeline?.weightedPipelineValue ?? 0)}
+          />
         </Col>
       </Row>
 

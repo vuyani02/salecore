@@ -26,6 +26,76 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
   `,
 
+  searchInput: css`
+    background-color: #707070 !important;
+    border: none !important;
+    color: #ffffff !important;
+
+    input {
+      background-color: transparent !important;
+      color: #ffffff !important;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.35) !important;
+      }
+    }
+
+    .ant-input-clear-icon {
+      color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+    &:hover, &:focus-within {
+      box-shadow: none !important;
+      background-color: #707070 !important;
+    }
+  `,
+
+  filterSelect: css`
+    background-color: #707070 !important;
+    border: none !important;
+    border-radius: 6px !important;
+
+    .ant-select-selector {
+      background-color: #707070 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-radius: 6px !important;
+      color: #ffffff !important;
+    }
+
+    &:hover .ant-select-selector,
+    &.ant-select-focused .ant-select-selector,
+    &.ant-select-open .ant-select-selector,
+    .ant-select-selector:focus,
+    .ant-select-selector:focus-within,
+    .ant-select-selector:focus-visible {
+      background-color: #707070 !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      border-color: transparent !important;
+    }
+
+    &.ant-select:not(.ant-select-disabled):not(.ant-select-customize-input):not(.ant-pagination-size-changer) .ant-select-selector {
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .ant-select-selection-placeholder {
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    .ant-select-selection-item {
+      color: #ffffff !important;
+    }
+
+    .ant-select-arrow, .ant-select-clear {
+      color: rgba(255, 255, 255, 0.55) !important;
+      background: transparent !important;
+    }
+  `,
+
   card: css`
     background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(112, 112, 112, 0.35) !important;
@@ -82,7 +152,7 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     .ant-pagination-item,
     .ant-pagination-prev .ant-pagination-item-link,
     .ant-pagination-next .ant-pagination-item-link {
-      background-color: rgba(255, 255, 255, 0.06) !important;
+      background-color: #707070 !important;
       border: none !important;
       box-shadow: none !important;
       border-radius: 6px !important;
@@ -174,22 +244,22 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
 
     .ant-table-thead > tr > th {
-      background: rgba(255, 255, 255, 0.04) !important;
-      color: rgba(255, 255, 255, 0.45) !important;
+      background: rgba(0, 0, 0, 0.02) !important;
+      color: rgba(0, 0, 0, 0.45) !important;
       font-size: 11px !important;
       font-weight: 700 !important;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      border-bottom: 1px solid rgba(112, 112, 112, 0.3) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
     }
 
     .ant-table-tbody > tr > td {
       background: transparent !important;
-      border-bottom: 1px solid rgba(112, 112, 112, 0.15) !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
     }
 
     .ant-table-tbody > tr:hover > td {
-      background: rgba(255, 255, 255, 0.03) !important;
+      background: rgba(0, 0, 0, 0.02) !important;
     }
 
     .ant-table-placeholder {
@@ -197,7 +267,7 @@ export const useProposalsPageStyles = createStyles(({ css }) => ({
     }
 
     .ant-empty-description {
-      color: rgba(255, 255, 255, 0.35) !important;
+      color: rgba(0, 0, 0, 0.35) !important;
     }
   `,
 

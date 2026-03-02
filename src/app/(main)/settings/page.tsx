@@ -21,7 +21,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const EMAILJS_SERVICE_ID  = "service_e0qgyuw";
-const EMAILJS_TEMPLATE_ID = "g71u691";
+const EMAILJS_TEMPLATE_ID = "template_efz41xm";
 const EMAILJS_PUBLIC_KEY  = "fUX4R5Wp_hfwEgKeW";
 const APP_URL             = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 

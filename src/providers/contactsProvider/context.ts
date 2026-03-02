@@ -6,12 +6,11 @@ export interface IContact {
   lastName: string;
   fullName?: string;
   email: string;
-  phone?: string;
-  jobTitle?: string;
-  department?: string;
+  phoneNumber?: string;
+  position?: string;
   clientId?: string;
   clientName?: string;
-  isPrimary?: boolean;
+  isPrimaryContact?: boolean;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -30,17 +29,17 @@ export interface IContactsQuery {
   search?: string;
   pageNumber?: number;
   pageSize?: number;
+  searchTerm?: string;
 }
 
 export interface ICreateContactPayload {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
-  jobTitle?: string;
-  department?: string;
+  phoneNumber?: string;
+  position?: string;
   clientId?: string;
-  isPrimary?: boolean;
+  isPrimaryContact?: boolean;
   notes?: string;
 }
 
@@ -48,10 +47,9 @@ export interface IUpdateContactPayload {
   firstName?: string;
   lastName?: string;
   email?: string;
-  phone?: string;
-  jobTitle?: string;
-  department?: string;
-  isPrimary?: boolean;
+  phoneNumber?: string;
+  position?: string;
+  isPrimaryContact?: boolean;
   notes?: string;
 }
 
@@ -72,6 +70,7 @@ export interface IContactsActionContext {
   createContact: (payload: ICreateContactPayload) => void;
   updateContact: (id: string, payload: IUpdateContactPayload) => void;
   deleteContact: (id: string) => void;
+  setPrimaryContact: (id: string) => void;
 }
 
 export const INITIAL_STATE: IContactsStateContext = {

@@ -34,6 +34,7 @@ export interface PricingRequestsQuery {
   status?: number;
   priority?: number;
   assignedToId?: string;
+  searchTerm?: string;
   pageNumber?: number;
   pageSize?: number;
 }

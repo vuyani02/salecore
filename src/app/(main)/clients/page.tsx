@@ -2,13 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Button, Card, Descriptions, Divider, Flex, Form, Input,
-  Modal, Popconfirm, Select, Spin, Table, Tag, Tooltip, Typography, message,
+  Button, Card, Descriptions, Divider, Dropdown, Flex, Form, Input,
+  Modal, Select, Spin, Table, Tag, Tooltip, Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined, SearchOutlined, DeleteOutlined,
-  EyeOutlined, EditOutlined, GlobalOutlined,
+  EyeOutlined, EditOutlined, GlobalOutlined, MoreOutlined,
   BankOutlined, TeamOutlined, FileTextOutlined,
 } from "@ant-design/icons";
 import { useClientsState, useClientsActions } from "@/providers/clientsProvider";
@@ -99,7 +99,7 @@ const ViewModal = ({ client, open, onClose, styles }: IViewModalProps) => {
             {client.name?.[0]?.toUpperCase() ?? "?"}
           </div>
           <Flex vertical gap={2}>
-            <Text className={styles.modalClientName}>{client.name}</Text>
+            <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 16, fontWeight: 700 }}>{client.name}</Text>
             {type && <Tag color={type.color} style={{ width: "fit-content", marginInlineEnd: 0 }}>{type.label}</Tag>}
           </Flex>
         </Flex>
@@ -111,15 +111,33 @@ const ViewModal = ({ client, open, onClose, styles }: IViewModalProps) => {
         </Flex>
       ) : stats ? (
         <Flex gap={12} style={{ marginBottom: 20 }}>
-          <StatCard icon={<FileTextOutlined />} label="Opportunities"  value={stats.opportunityCount}          styles={styles} />
-          <StatCard icon={<BankOutlined />}     label="Contracts"      value={stats.contractCount}             styles={styles} />
-          <StatCard icon={<TeamOutlined />}     label="Contract Value" value={`R ${(stats.totalContractValue ?? 0).toLocaleString()}`} styles={styles} />
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, padding: "14px 16px" }}>
+            <FileTextOutlined style={{ fontSize: 20, color: "rgba(0,0,0,0.3)" }} />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(0,0,0,0.85)", lineHeight: 1.2 }}>{stats.opportunityCount ?? stats.opportunitiesCount ?? "—"}</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>Opportunities</div>
+            </div>
+          </div>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, padding: "14px 16px" }}>
+            <BankOutlined style={{ fontSize: 20, color: "rgba(0,0,0,0.3)" }} />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(0,0,0,0.85)", lineHeight: 1.2 }}>{stats.contractCount ?? stats.contractsCount ?? "—"}</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>Contracts</div>
+            </div>
+          </div>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, padding: "14px 16px" }}>
+            <TeamOutlined style={{ fontSize: 20, color: "rgba(0,0,0,0.3)" }} />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(0,0,0,0.85)", lineHeight: 1.2 }}>R {(stats.totalContractValue ?? 0).toLocaleString()}</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 2 }}>Contract Value</div>
+            </div>
+          </div>
         </Flex>
       ) : null}
 
-      <Divider style={{ borderColor: "rgba(112,112,112,0.3)", margin: "0 0 16px" }} />
+      <Divider style={{ borderColor: "rgba(0,0,0,0.1)", margin: "0 0 16px" }} />
 
-      <Descriptions column={2} size="small" labelStyle={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }} contentStyle={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600 }}>
+      <Descriptions column={2} size="small" labelStyle={{ color: "rgba(0,0,0,0.45)", fontSize: 12 }} contentStyle={{ color: "rgba(0,0,0,0.85)", fontSize: 13, fontWeight: 600 }}>
         <Descriptions.Item label="Industry">{client.industry ?? "—"}</Descriptions.Item>
         <Descriptions.Item label="Company Size">{client.companySize ?? "—"}</Descriptions.Item>
         <Descriptions.Item label="Tax Number">{client.taxNumber ?? "—"}</Descriptions.Item>
@@ -131,7 +149,7 @@ const ViewModal = ({ client, open, onClose, styles }: IViewModalProps) => {
         <Descriptions.Item label="Billing Address" span={2}>{client.billingAddress ?? "—"}</Descriptions.Item>
         {client.website && (
           <Descriptions.Item label="Website" span={2}>
-            <a href={client.website} target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.6)" }}>
+            <a href={client.website} target="_blank" rel="noreferrer" style={{ color: "rgba(0,0,0,0.55)" }}>
               {client.website}
             </a>
           </Descriptions.Item>
@@ -246,16 +264,17 @@ const ClientsPage = () => {
 
   // ── Filters & pagination ──────────────────────────────────────────────────
   const [pageNumber,  setPageNumber]  = useState(1);
-  const [pageSize,    setPageSize]    = useState(10);
+  const [pageSize,    setPageSize]    = useState(7);
   const [searchTerm,  setSearchTerm]  = useState("");
   const [industry,    setIndustry]    = useState<string | undefined>();
   const [clientType,  setClientType]  = useState<number | undefined>();
   const [isActive,    setIsActive]    = useState<boolean | undefined>();
 
   // ── Modal state ───────────────────────────────────────────────────────────
-  const [showCreate, setShowCreate] = useState(false);
-  const [editClient, setEditClient] = useState<Client | null>(null);
-  const [viewClient, setViewClient] = useState<Client | null>(null);
+  const [showCreate,   setShowCreate]   = useState(false);
+  const [editClient,   setEditClient]   = useState<Client | null>(null);
+  const [viewClient,   setViewClient]   = useState<Client | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // ── Debounce search ───────────────────────────────────────────────────────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -315,8 +334,10 @@ const ClientsPage = () => {
     fetchClients();
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteClient(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteClient(deleteTarget);
+    setDeleteTarget(null);
     fetchClients();
   };
 
@@ -370,42 +391,43 @@ const ClientsPage = () => {
     },
     {
       title: "Actions",
-      width: 130,
-      render: (_: any, record: Client) => (
-        <Flex gap={6}>
-          <Tooltip title="View Profile">
-            <Button size="small" icon={<EyeOutlined />} className={styles.actionBtn} onClick={() => setViewClient(record)} />
-          </Tooltip>
+      width: 60,
+      render: (_: any, record: Client) => {
+        const menuItems = [
+          {
+            key: "view",
+            label: "View Profile",
+            icon: <EyeOutlined />,
+            onClick: () => setViewClient(record),
+          },
+          {
+            key: "edit",
+            label: "Edit",
+            icon: <EditOutlined />,
+            onClick: () => setEditClient(record),
+          },
+          ...(canDelete ? [
+            { type: "divider" as const },
+            {
+              key: "delete",
+              label: "Delete",
+              icon: <DeleteOutlined />,
+              danger: true,
+              onClick: () => setDeleteTarget(record.id),
+            },
+          ] : []),
+        ];
 
-          <Tooltip title="Edit">
-            <Button size="small" icon={<EditOutlined />} className={styles.actionBtn} onClick={() => setEditClient(record)} />
-          </Tooltip>
-
-          {canDelete ? (
-            <Popconfirm
-              title="Delete client?"
-              description="This action cannot be undone."
-              onConfirm={() => handleDelete(record.id)}
-              okText="Delete"
-              okButtonProps={{ danger: true }}
-              cancelText="Cancel"
-            >
-              <Tooltip title="Delete">
-                <Button size="small" icon={<DeleteOutlined />} className={styles.actionBtnDanger} />
-              </Tooltip>
-            </Popconfirm>
-          ) : (
-            <Tooltip title="Delete">
-              <Button
-                size="small"
-                icon={<DeleteOutlined />}
-                className={styles.actionBtnDanger}
-                onClick={() => message.error("You don't have permission to delete clients.")}
-              />
-            </Tooltip>
-          )}
-        </Flex>
-      ),
+        return (
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">
+            <Button
+              size="small"
+              icon={<MoreOutlined />}
+              className={styles.actionBtn}
+            />
+          </Dropdown>
+        );
+      },
     },
   ];
 
@@ -507,6 +529,21 @@ const ClientsPage = () => {
         onClose={() => setViewClient(null)}
         styles={styles}
       />
+
+      <Modal
+        open={!!deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onOk={handleDelete}
+        okText="Delete"
+        okButtonProps={{ danger: true, loading: state.isPending }}
+        cancelText="Cancel"
+        title="Delete Client"
+        width={420}
+      >
+        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+          Are you sure you want to delete this client? This action cannot be undone.
+        </Text>
+      </Modal>
 
     </Flex>
   );

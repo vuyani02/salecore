@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Button, Card, Col, DatePicker, Descriptions, Divider, Dropdown,
   Flex, Form, Input, InputNumber, Modal, Row, Select,
@@ -10,7 +10,7 @@ import type { ColumnsType } from "antd/es/table";
 import {
   PlusOutlined, DeleteOutlined, MoreOutlined,
   CheckOutlined, CloseOutlined, SendOutlined,
-  InfoCircleOutlined, EyeOutlined,
+  InfoCircleOutlined, EyeOutlined, SearchOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useProposalsState, useProposalsActions } from "@/providers/proposalsProvider";
@@ -28,8 +28,16 @@ const { TextArea } = Input;
 const PROPOSAL_STATUS: Record<number, { label: string; color: string }> = {
   1: { label: "Draft",     color: "default" },
   2: { label: "Submitted", color: "blue"    },
-  3: { label: "Approved",  color: "green"   },
-  4: { label: "Rejected",  color: "red"     },
+  3: { label: "Rejected",  color: "red"     },
+  4: { label: "Approved",  color: "green"   },
+  5: { label: "Rejected",  color: "red"     },
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  Draft:     "default",
+  Submitted: "blue",
+  Approved:  "green",
+  Rejected:  "red",
 };
 
 const fmt = (v?: number | null, currency = "ZAR") => {
@@ -62,9 +70,9 @@ const LineItemsForm = ({ items, currency, onChange }: {
 
   return (
     <Flex vertical gap={12}>
-      <Flex align="center" gap={6} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(112,112,112,0.2)", borderRadius: 8, padding: "8px 12px" }}>
-        <InfoCircleOutlined style={{ color: "rgba(255,255,255,0.4)" }} />
-        <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+      <Flex align="center" gap={6} style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 12px" }}>
+        <InfoCircleOutlined style={{ color: "rgba(0,0,0,0.3)" }} />
+        <Text style={{ color: "rgba(0,0,0,0.5)", fontSize: 12 }}>
           Add each product or service you're quoting. Totals are calculated automatically.
         </Text>
       </Flex>
@@ -73,13 +81,13 @@ const LineItemsForm = ({ items, currency, onChange }: {
         <Card
           key={i}
           size="small"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(112,112,112,0.3)", borderRadius: 10 }}
+          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10 }}
           title={
             <Flex align="center" gap={8}>
-              <span style={{ background: "rgba(112,112,112,0.3)", color: "#fff", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+              <span style={{ background: "rgba(0,0,0,0.1)", color: "rgba(0,0,0,0.7)", borderRadius: "50%", width: 20, height: 20, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
                 {i + 1}
               </span>
-              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 600 }}>
+              <Text style={{ color: "rgba(0,0,0,0.75)", fontSize: 13, fontWeight: 600 }}>
                 {item.productServiceName || "New Item"}
               </Text>
             </Flex>
@@ -92,17 +100,17 @@ const LineItemsForm = ({ items, currency, onChange }: {
             <Row gutter={12}>
               <Col span={12}>
                 <Flex vertical gap={4}>
-                  <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>
+                  <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>
                     Product / Service <span style={{ color: "#ff4d4f" }}>*</span>
                   </Text>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Name of what you're selling</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>Name of what you're selling</Text>
                   <Input value={item.productServiceName} onChange={(e) => update(i, "productServiceName", e.target.value)} placeholder="e.g. Software Implementation" style={{ marginTop: 2 }} />
                 </Flex>
               </Col>
               <Col span={12}>
                 <Flex vertical gap={4}>
-                  <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>Description</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Optional detail for the client</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>Description</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>Optional detail for the client</Text>
                   <Input value={item.description} onChange={(e) => update(i, "description", e.target.value)} placeholder="e.g. Initial setup and configuration" style={{ marginTop: 2 }} />
                 </Flex>
               </Col>
@@ -111,60 +119,60 @@ const LineItemsForm = ({ items, currency, onChange }: {
             <Row gutter={12}>
               <Col span={6}>
                 <Flex vertical gap={4}>
-                  <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>Quantity</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>How many units</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>Quantity</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>How many units</Text>
                   <InputNumber value={item.quantity} min={1} onChange={(v) => update(i, "quantity", v ?? 1)} style={{ width: "100%", marginTop: 2 }} />
                 </Flex>
               </Col>
               <Col span={6}>
                 <Flex vertical gap={4}>
-                  <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>Unit Price</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Price per unit</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>Unit Price</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>Price per unit</Text>
                   <InputNumber value={item.unitPrice} min={0} prefix={currencyPrefix} onChange={(v) => update(i, "unitPrice", v ?? 0)} style={{ width: "100%", marginTop: 2 }} />
                 </Flex>
               </Col>
               <Col span={6}>
                 <Flex vertical gap={4}>
                   <Flex align="center" gap={4}>
-                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>Discount</Text>
-                    <Tooltip title="% off the unit price before tax"><InfoCircleOutlined style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }} /></Tooltip>
+                    <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>Discount</Text>
+                    <Tooltip title="% off the unit price before tax"><InfoCircleOutlined style={{ color: "rgba(0,0,0,0.25)", fontSize: 11 }} /></Tooltip>
                   </Flex>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>% reduction</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>% reduction</Text>
                   <InputNumber value={item.discount} min={0} max={100} suffix="%" onChange={(v) => update(i, "discount", v ?? 0)} style={{ width: "100%", marginTop: 2 }} />
                 </Flex>
               </Col>
               <Col span={6}>
                 <Flex vertical gap={4}>
                   <Flex align="center" gap={4}>
-                    <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 600 }}>Tax Rate</Text>
-                    <Tooltip title="VAT or applicable tax. South Africa standard is 15%"><InfoCircleOutlined style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }} /></Tooltip>
+                    <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 12, fontWeight: 600 }}>Tax Rate</Text>
+                    <Tooltip title="VAT or applicable tax. South Africa standard is 15%"><InfoCircleOutlined style={{ color: "rgba(0,0,0,0.25)", fontSize: 11 }} /></Tooltip>
                   </Flex>
-                  <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 11 }}>Default: 15% VAT</Text>
+                  <Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>Default: 15% VAT</Text>
                   <InputNumber value={item.taxRate} min={0} max={100} suffix="%" onChange={(v) => update(i, "taxRate", v ?? 0)} style={{ width: "100%", marginTop: 2 }} />
                 </Flex>
               </Col>
             </Row>
 
-            <Flex justify="flex-end" align="center" gap={8} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 6, padding: "6px 12px" }}>
-              <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+            <Flex justify="flex-end" align="center" gap={8} style={{ background: "rgba(0,0,0,0.03)", borderRadius: 6, padding: "6px 12px" }}>
+              <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 12 }}>
                 {item.quantity} × {currencyPrefix}{item.unitPrice.toLocaleString()}
                 {item.discount > 0 && ` − ${item.discount}%`}
                 {` + ${item.taxRate}% tax =`}
               </Text>
-              <Text style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{fmt(calcLineTotal(item), currency)}</Text>
+              <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 14 }}>{fmt(calcLineTotal(item), currency)}</Text>
             </Flex>
           </Flex>
         </Card>
       ))}
 
       <Flex justify="space-between" align="center">
-        <Button type="dashed" icon={<PlusOutlined />} onClick={addRow} style={{ color: "rgba(255,255,255,0.5)", borderColor: "rgba(112,112,112,0.4)" }}>
+        <Button type="dashed" icon={<PlusOutlined />} onClick={addRow} style={{ color: "rgba(0,0,0,0.45)", borderColor: "rgba(0,0,0,0.2)" }}>
           Add Another Item
         </Button>
         {items.length > 0 && (
-          <Flex align="center" gap={12} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", borderRadius: 8, padding: "8px 16px" }}>
-            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 13 }}>Grand Total</Text>
-            <Text style={{ color: "#ffffff", fontWeight: 700, fontSize: 16 }}>{fmt(grandTotal, currency)}</Text>
+          <Flex align="center" gap={12} style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "8px 16px" }}>
+            <Text style={{ color: "rgba(0,0,0,0.5)", fontSize: 13 }}>Grand Total</Text>
+            <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 16 }}>{fmt(grandTotal, currency)}</Text>
           </Flex>
         )}
       </Flex>
@@ -179,8 +187,8 @@ const SectionLabel = ({ step, title, subtitle }: { step: number; title: string; 
       {step}
     </span>
     <Flex vertical gap={1}>
-      <Text style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 13 }}>{title}</Text>
-      <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>{subtitle}</Text>
+      <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 13 }}>{title}</Text>
+      <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 11 }}>{subtitle}</Text>
     </Flex>
   </Flex>
 );
@@ -228,8 +236,8 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
     <Modal
       title={
         <Flex vertical gap={2}>
-          <Text style={{ color: "rgba(255,255,255,0.95)", fontSize: 16, fontWeight: 700 }}>Request a Proposal</Text>
-          <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 400 }}>
+          <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 16, fontWeight: 700 }}>Request a Proposal</Text>
+          <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 12, fontWeight: 400 }}>
             Fill in the details below — all fields marked <span style={{ color: "#ff4d4f" }}>*</span> are required
           </Text>
         </Flex>
@@ -247,7 +255,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
             <Flex align="center" gap={6}>
               <span>Opportunity</span>
               <Tooltip title="Select the sales opportunity this proposal is tied to.">
-                <InfoCircleOutlined style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }} />
+                <InfoCircleOutlined style={{ color: "rgba(0,0,0,0.25)", fontSize: 12 }} />
               </Tooltip>
             </Flex>
           }
@@ -264,7 +272,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
         <Form.Item
           name="title"
           label="Proposal Title"
-          extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>e.g. "Q2 2026 – Annual Support Agreement"</Text>}
+          extra={<Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>e.g. "Q2 2026 – Annual Support Agreement"</Text>}
           rules={[{ required: true, message: "Please enter a proposal title" }]}
         >
           <Input placeholder="Give this proposal a descriptive name" />
@@ -272,7 +280,7 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
 
         <Row gutter={12}>
           <Col span={12}>
-            <Form.Item name="currency" label="Currency" extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>All line item prices will use this currency</Text>}>
+            <Form.Item name="currency" label="Currency" extra={<Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>All line item prices will use this currency</Text>}>
               <Select onChange={(v) => setCurrency(v)}>
                 <Option value="ZAR">ZAR – South African Rand (R)</Option>
                 <Option value="USD">USD – US Dollar ($)</Option>
@@ -280,13 +288,13 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item name="validUntil" label="Valid Until" extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>The date this proposal expires</Text>}>
+            <Form.Item name="validUntil" label="Valid Until" extra={<Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>The date this proposal expires</Text>}>
               <DatePicker style={{ width: "100%" }} disabledDate={(d) => d && d.isBefore(dayjs(), "day")} placeholder="Select expiry date" />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item name="description" label="Description" extra={<Text style={{ color: "rgba(255,255,255,0.3)", fontSize: 11 }}>Optional — provide context or notes for the client</Text>}>
+        <Form.Item name="description" label="Description" extra={<Text style={{ color: "rgba(0,0,0,0.35)", fontSize: 11 }}>Optional — provide context or notes for the client</Text>}>
           <TextArea rows={3} placeholder="e.g. This proposal covers the annual support and maintenance package discussed in our meeting on 10 Jan." />
         </Form.Item>
 
@@ -297,8 +305,8 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
 
         <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "20px 0 16px" }} />
         <Flex justify="space-between" align="center">
-          <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-            The proposal will be saved as a <strong style={{ color: "rgba(255,255,255,0.5)" }}>Draft</strong> — you can submit it for approval afterwards.
+          <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 12 }}>
+            The proposal will be saved as a <strong style={{ color: "rgba(0,0,0,0.6)" }}>Draft</strong> — you can submit it for approval afterwards.
           </Text>
           <Flex gap={8}>
             <Button onClick={handleClose}>Cancel</Button>
@@ -317,24 +325,34 @@ const CreateModal = ({ open, onClose, onSubmit, isPending }: {
 const ViewModal = ({ proposal, open, onClose, styles }: {
   proposal: IProposal | null; open: boolean; onClose: () => void; styles: any;
 }) => {
-  if (!proposal) return null;
+  const { getProposal } = useProposalsActions();
+  const { proposal: fullProposal, isPending } = useProposalsState();
 
-  const status = PROPOSAL_STATUS[proposal.status];
+  useEffect(() => {
+    if (open && proposal?.id) getProposal(proposal.id);
+  }, [open, proposal?.id]);
+
+  // Use the full fetched proposal for line items/totals, fall back to list record for metadata
+  const data = open && fullProposal?.id === proposal?.id ? fullProposal : proposal;
+
+  if (!data) return null;
+
+  const status = PROPOSAL_STATUS[data.status];
 
   // Line items columns (read-only)
   const lineItemCols = [
-    { title: "Product / Service", dataIndex: "productServiceName", render: (v: string) => <Text style={{ color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>{v}</Text> },
-    { title: "Description",       dataIndex: "description",        render: (v: string) => <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>{v || "—"}</Text> },
-    { title: "Qty",   dataIndex: "quantity",   width: 60,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.7)" }}>{v}</Text> },
-    { title: "Price", dataIndex: "unitPrice",  width: 100, render: (v: number, r: any) => <Text style={{ color: "rgba(255,255,255,0.7)" }}>{fmt(v, proposal.currency)}</Text> },
-    { title: "Disc%", dataIndex: "discount",   width: 70,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.55)" }}>{v}%</Text> },
-    { title: "Tax%",  dataIndex: "taxRate",    width: 70,  render: (v: number) => <Text style={{ color: "rgba(255,255,255,0.55)" }}>{v}%</Text> },
+    { title: "Product / Service", dataIndex: "productServiceName", render: (v: string) => <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 600 }}>{v}</Text> },
+    { title: "Description",       dataIndex: "description",        render: (v: string) => <Text style={{ color: "rgba(0,0,0,0.5)", fontSize: 12 }}>{v || "—"}</Text> },
+    { title: "Qty",   dataIndex: "quantity",   width: 60,  render: (v: number) => <Text style={{ color: "rgba(0,0,0,0.7)" }}>{v}</Text> },
+    { title: "Price", dataIndex: "unitPrice",  width: 100, render: (v: number) => <Text style={{ color: "rgba(0,0,0,0.7)" }}>{fmt(v, data.currency)}</Text> },
+    { title: "Disc%", dataIndex: "discount",   width: 70,  render: (v: number) => <Text style={{ color: "rgba(0,0,0,0.5)" }}>{v}%</Text> },
+    { title: "Tax%",  dataIndex: "taxRate",    width: 70,  render: (v: number) => <Text style={{ color: "rgba(0,0,0,0.5)" }}>{v}%</Text> },
     {
       title: "Total",
       width: 110,
       render: (_: any, r: any) => (
-        <Text style={{ color: "#fff", fontWeight: 700 }}>
-          {fmt(r.quantity * r.unitPrice * (1 - r.discount / 100) * (1 + r.taxRate / 100), proposal.currency)}
+        <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700 }}>
+          {fmt(r.quantity * r.unitPrice * (1 - r.discount / 100) * (1 + r.taxRate / 100), data.currency)}
         </Text>
       ),
     },
@@ -349,79 +367,89 @@ const ViewModal = ({ proposal, open, onClose, styles }: {
       width={820}
       title={
         <Flex vertical gap={6}>
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16, fontWeight: 700 }}>{proposal.title}</Text>
+          <Text style={{ color: "rgba(0,0,0,0.85)", fontSize: 16, fontWeight: 700 }}>{data.title}</Text>
           <Flex gap={6}>
-            {status && <Tag color={status.color} style={{ marginInlineEnd: 0 }}>{status.label}</Tag>}
-            <Tag style={{ marginInlineEnd: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(112,112,112,0.3)", color: "rgba(255,255,255,0.6)" }}>
-              {proposal.currency}
-            </Tag>
+            {(() => {
+              const label = data.statusName ?? PROPOSAL_STATUS[data.status]?.label;
+              const color = label ? (STATUS_COLOR[label] ?? "default") : "default";
+              return label ? <Tag color={color} style={{ marginInlineEnd: 0 }}>{label}</Tag> : null;
+            })()}
+            <Tag style={{ marginInlineEnd: 0 }}>{data.currency}</Tag>
           </Flex>
         </Flex>
       }
     >
-      {/* Details */}
-      <Descriptions
-        column={2}
-        size="small"
-        style={{ marginBottom: 16 }}
-        labelStyle={{ color: "rgba(255,255,255,0.45)", fontSize: 12 }}
-        contentStyle={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: 600 }}
-      >
-        <Descriptions.Item label="Client">{proposal.clientName ?? "—"}</Descriptions.Item>
-        <Descriptions.Item label="Opportunity">{proposal.opportunityTitle ?? "—"}</Descriptions.Item>
-        <Descriptions.Item label="Valid Until">
-          {proposal.validUntil ? dayjs(proposal.validUntil).format("DD MMM YYYY") : "—"}
-        </Descriptions.Item>
-        <Descriptions.Item label="Created">
-          {proposal.createdAt ? dayjs(proposal.createdAt).format("DD MMM YYYY") : "—"}
-        </Descriptions.Item>
-        {proposal.description && (
-          <Descriptions.Item label="Description" span={2}>{proposal.description}</Descriptions.Item>
-        )}
-        {proposal.rejectionReason && (
-          <Descriptions.Item label="Rejection Reason" span={2}>
-            <Text style={{ color: "rgba(255,77,79,0.85)" }}>{proposal.rejectionReason}</Text>
-          </Descriptions.Item>
-        )}
-      </Descriptions>
-
-      <Divider style={{ borderColor: "rgba(112,112,112,0.25)", margin: "0 0 16px" }} />
-
-      {/* Line items */}
-      <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 10 }}>
-        Line Items
-      </Text>
-      <Table
-        className={styles.lineItemTable}
-        dataSource={proposal.lineItems ?? []}
-        columns={lineItemCols}
-        rowKey={(_, i) => String(i)}
-        pagination={false}
-        size="small"
-        locale={{ emptyText: "No line items" }}
-      />
-
-      {/* Totals */}
-      {(proposal.lineItems?.length ?? 0) > 0 && (
-        <Flex vertical gap={6} style={{ marginTop: 16, padding: "12px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(112,112,112,0.25)", borderRadius: 8 }}>
-          <Flex justify="space-between">
-            <Text className={styles.totalsLabel}>Subtotal</Text>
-            <Text className={styles.totalsValue}>{fmt(proposal.subtotal, proposal.currency)}</Text>
-          </Flex>
-          <Flex justify="space-between">
-            <Text className={styles.totalsLabel}>Tax</Text>
-            <Text className={styles.totalsValue}>{fmt(proposal.totalTax, proposal.currency)}</Text>
-          </Flex>
-          <Flex justify="space-between">
-            <Text className={styles.totalsLabel}>Discount</Text>
-            <Text className={styles.totalsValue}>−{fmt(proposal.totalDiscount, proposal.currency)}</Text>
-          </Flex>
-          <Divider style={{ borderColor: "rgba(112,112,112,0.2)", margin: "4px 0" }} />
-          <Flex justify="space-between">
-            <Text className={styles.totalsFinalLabel}>Total</Text>
-            <Text className={styles.totalsFinalValue}>{fmt(proposal.totalAmount, proposal.currency)}</Text>
-          </Flex>
+      {isPending ? (
+        <Flex justify="center" align="center" style={{ padding: "40px 0" }}>
+          <Text style={{ color: "rgba(0,0,0,0.4)" }}>Loading proposal...</Text>
         </Flex>
+      ) : (
+        <>
+          {/* Details */}
+          <Descriptions
+            column={2}
+            size="small"
+            style={{ marginBottom: 16 }}
+            labelStyle={{ color: "rgba(0,0,0,0.45)", fontSize: 12 }}
+            contentStyle={{ color: "rgba(0,0,0,0.85)", fontSize: 13, fontWeight: 600 }}
+          >
+            <Descriptions.Item label="Client">{data.clientName ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Opportunity">{data.opportunityTitle ?? "—"}</Descriptions.Item>
+            <Descriptions.Item label="Valid Until">
+              {data.validUntil ? dayjs(data.validUntil).format("DD MMM YYYY") : "—"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Created">
+              {data.createdAt ? dayjs(data.createdAt).format("DD MMM YYYY") : "—"}
+            </Descriptions.Item>
+            {data.description && (
+              <Descriptions.Item label="Description" span={2}>{data.description}</Descriptions.Item>
+            )}
+            {data.rejectionReason && (
+              <Descriptions.Item label="Rejection Reason" span={2}>
+                <Text style={{ color: "rgba(200,50,50,0.85)" }}>{data.rejectionReason}</Text>
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+
+          <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "0 0 16px" }} />
+
+          {/* Line items */}
+          <Text style={{ color: "rgba(0,0,0,0.4)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 10 }}>
+            Line Items
+          </Text>
+          <Table
+            className={styles.lineItemTable}
+            dataSource={(data.lineItems ?? []).map((item, idx) => ({ ...item, _rowKey: String(idx) }))}
+            columns={lineItemCols}
+            rowKey="_rowKey"
+            pagination={false}
+            size="small"
+            locale={{ emptyText: "No line items" }}
+          />
+
+          {/* Totals */}
+          {(data.lineItems?.length ?? 0) > 0 && (
+            <Flex vertical gap={6} style={{ marginTop: 16, padding: "12px 16px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8 }}>
+              <Flex justify="space-between">
+                <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 13 }}>Subtotal</Text>
+                <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 13 }}>{fmt(data.subtotal, data.currency)}</Text>
+              </Flex>
+              <Flex justify="space-between">
+                <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 13 }}>Tax</Text>
+                <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 13 }}>{fmt(data.totalTax, data.currency)}</Text>
+              </Flex>
+              <Flex justify="space-between">
+                <Text style={{ color: "rgba(0,0,0,0.45)", fontSize: 13 }}>Discount</Text>
+                <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 13 }}>−{fmt(data.totalDiscount, data.currency)}</Text>
+              </Flex>
+              <Divider style={{ borderColor: "rgba(0,0,0,0.08)", margin: "4px 0" }} />
+              <Flex justify="space-between">
+                <Text style={{ color: "rgba(0,0,0,0.85)", fontWeight: 700, fontSize: 14 }}>Total</Text>
+                <Text style={{ color: "rgba(0,0,0,0.9)", fontWeight: 700, fontSize: 15 }}>{fmt(data.totalAmount, data.currency)}</Text>
+              </Flex>
+            </Flex>
+          )}
+        </>
       )}
     </Modal>
   );
@@ -450,7 +478,7 @@ const RejectModal = ({ open, onClose, onSubmit, isPending }: {
       destroyOnHidden
     >
       <Flex vertical gap={8}>
-        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Please provide a reason for rejection:</Text>
+        <Text style={{ color: "rgba(0,0,0,0.65)", fontSize: 13 }}>Please provide a reason for rejection:</Text>
         <TextArea
           rows={3}
           value={reason}
@@ -470,16 +498,16 @@ const ProposalsPage = () => {
     useProposalsActions();
 
   // ── Mounted + role ────────────────────────────────────────────────────────
-  const [canManage, setCanManage] = useState(false);
-  useEffect(() => {
-    const role = localStorage.getItem("user_role") ?? "";
-    setCanManage(["Admin", "SalesManager"].includes(role));
-  }, []);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const canManage = mounted && ["Admin", "SalesManager"].includes(localStorage.getItem("user_role") ?? "");
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [pageNumber,    setPageNumber]    = useState(1);
-  const [pageSize,      setPageSize]      = useState(10);
+  const [pageSize,      setPageSize]      = useState(5);
   const [statusFilter,  setStatusFilter]  = useState<number | undefined>();
+  const [searchTerm,    setSearchTerm]    = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showCreate,    setShowCreate]    = useState(false);
   const [viewTarget,    setViewTarget]    = useState<IProposal | null>(null);
   const [submitTarget,  setSubmitTarget]  = useState<string | null>(null);
@@ -493,7 +521,16 @@ const ProposalsPage = () => {
   const items      = useMemo(() => state.proposals?.items ?? [], [state.proposals]);
   const totalCount = state.proposals?.totalCount ?? 0;
 
-  const refresh = () => getProposals({ pageNumber, pageSize, status: statusFilter });
+  const refresh = () => getProposals({ pageNumber, pageSize, status: statusFilter, searchTerm: searchTerm || undefined });
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPageNumber(1);
+      getProposals({ pageNumber: 1, pageSize, searchTerm: val || undefined, status: statusFilter });
+    }, 400);
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCreate = async (payload: ICreateProposalPayload) => {
@@ -545,9 +582,10 @@ const ProposalsPage = () => {
     {
       title: "Status",
       dataIndex: "status",
-      render: (status: number) => {
-        const s = PROPOSAL_STATUS[status];
-        return s ? <Tag color={s.color} style={{ marginInlineEnd: 0 }}>{s.label}</Tag> : <Tag>Unknown</Tag>;
+      render: (status: number, record: IProposal) => {
+        const label = record.statusName ?? PROPOSAL_STATUS[status]?.label ?? `Status ${status}`;
+        const color = STATUS_COLOR[label] ?? PROPOSAL_STATUS[status]?.color ?? "default";
+        return <Tag color={color} style={{ marginInlineEnd: 0 }}>{label}</Tag>;
       },
     },
     {
@@ -653,20 +691,32 @@ const ProposalsPage = () => {
         </Button>
       </Flex>
 
-      {/* Status filter */}
-      <Flex gap={12}>
-        <Select
-          placeholder="All Statuses"
-          allowClear
-          value={statusFilter}
-          onChange={(v) => { setStatusFilter(v); setPageNumber(1); }}
-          style={{ minWidth: 160, background: "#707070", border: "none" }}
-        >
-          {Object.entries(PROPOSAL_STATUS).map(([k, v]) => (
-            <Option key={k} value={Number(k)}>{v.label}</Option>
-          ))}
-        </Select>
-      </Flex>
+      {/* Filters */}
+      {mounted && (
+        <Flex gap={12} wrap="wrap">
+          <Input
+            prefix={<SearchOutlined style={{ color: "rgba(255,255,255,0.3)" }} />}
+            placeholder="Search by title..."
+            className={styles.searchInput}
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            allowClear
+            style={{ width: 220 }}
+          />
+          <Select
+            className={styles.filterSelect}
+            placeholder="All Statuses"
+            allowClear
+            value={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setPageNumber(1); }}
+            style={{ minWidth: 160 }}
+          >
+            {Object.entries(PROPOSAL_STATUS).map(([k, v]) => (
+              <Option key={k} value={Number(k)}>{v.label}</Option>
+            ))}
+          </Select>
+        </Flex>
+      )}
 
       {/* Table */}
       <Card className={styles.card} variant="outlined">
@@ -706,7 +756,7 @@ const ProposalsPage = () => {
         title="Submit Proposal"
         width={420}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+        <Text style={{ color: "rgba(0,0,0,0.65)" }}>
           Once submitted, the proposal will be locked for editing until it is approved or rejected by an Admin or Sales Manager.
         </Text>
       </Modal>
@@ -722,7 +772,7 @@ const ProposalsPage = () => {
         title="Approve Proposal"
         width={420}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+        <Text style={{ color: "rgba(0,0,0,0.65)" }}>
           Approving this proposal will allow the team to proceed with creating a contract. This action cannot be undone.
         </Text>
       </Modal>
@@ -738,7 +788,7 @@ const ProposalsPage = () => {
         title="Delete Draft Proposal"
         width={420}
       >
-        <Text style={{ color: "rgba(255,255,255,0.7)" }}>
+        <Text style={{ color: "rgba(0,0,0,0.65)" }}>
           Are you sure you want to delete this draft? This action cannot be undone.
         </Text>
       </Modal>

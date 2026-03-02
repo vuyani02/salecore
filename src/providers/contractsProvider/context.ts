@@ -10,7 +10,7 @@ export interface Contract {
   clientId?: string;
   clientName?: string;
   title: string;
-  description?: string;
+  terms?: string;
   contractValue: number;
   currency?: string;
   startDate?: string;
@@ -18,8 +18,8 @@ export interface Contract {
   status: number;
   statusName?: string;
   autoRenew?: boolean;
-  renewalNoticePeriodDays?: number;
-  assignedToId?: string;
+  renewalNoticePeriod?: number;
+  ownerId?: string;
   assignedToName?: string;
   createdAt?: string;
 }
@@ -49,19 +49,22 @@ export interface ContractsQuery {
   clientId?: string;
   pageNumber?: number;
   pageSize?: number;
+  searchTerm?: string;
 }
 
 export interface CreateContractPayload {
+  clientId?: string;
   opportunityId?: string;
+  proposalId?: string;
   title: string;
-  description?: string;
+  terms?: string;
   contractValue: number;
   currency?: string;
   startDate?: string;
   endDate?: string;
   autoRenew?: boolean;
-  renewalNoticePeriodDays?: number;
-  assignedToId?: string;
+  renewalNoticePeriod?: number;
+  ownerId?: string;
 }
 
 export interface UpdateContractPayload extends CreateContractPayload {}

@@ -23,6 +23,10 @@ export const ContactsReducer = handleActions<IContactsStateContext, IContactsSta
     [ContactsActionEnums.deleteContactPending]: (state, action) => ({ ...state, ...action.payload }),
     [ContactsActionEnums.deleteContactSuccess]: (state, action) => ({ ...state, ...action.payload }),
     [ContactsActionEnums.deleteContactError]:   (state, action) => ({ ...state, ...action.payload }),
+
+    [ContactsActionEnums.setPrimaryContactPending]: (state, action) => ({ ...state, ...action.payload }),
+    [ContactsActionEnums.setPrimaryContactSuccess]: (state, action) => ({ ...state, ...action.payload }),
+    [ContactsActionEnums.setPrimaryContactError]:   (state, action) => ({ ...state, ...action.payload }),
   },
   INITIAL_STATE
 );
