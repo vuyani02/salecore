@@ -23,7 +23,7 @@ const { Option } = Select;
 const EMAILJS_SERVICE_ID  = "service_e0qgyuw";
 const EMAILJS_TEMPLATE_ID = "template_efz41xm";
 const EMAILJS_PUBLIC_KEY  = "fUX4R5Wp_hfwEgKeW";
-const APP_URL             = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const APP_URL             = process.env.NEXT_PUBLIC_APP_URL;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ISentInvite {
@@ -192,7 +192,7 @@ const InviteTab = ({ styles }: { styles: any }) => {
   const handleSend = async (values: any) => {
     setSending(true);
     const { email, role } = values;
-    const inviteUrl = `${APP_URL}/signup?tenantId=${tenantId}&role=${role}&email=${encodeURIComponent(email)}`;
+    const inviteUrl = `${APP_URL}/signUp?tenantId=${tenantId}&role=${role}&email=${encodeURIComponent(email)}`;
     const roleLabel = ROLE_LABELS[role] ?? role;
 
     const html = `
@@ -275,7 +275,6 @@ const InviteTab = ({ styles }: { styles: any }) => {
       setSentList((prev) => [{ email, role, sentAt: new Date().toISOString() }, ...prev]);
       form.resetFields();
     } catch (err: any) {
-      console.error("❌ EmailJS error:", err?.status, err?.text, JSON.stringify(err));
       message.error(err?.text ?? err?.message ?? "Failed to send invite");
     } finally {
       setSending(false);
